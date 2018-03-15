@@ -12,16 +12,18 @@ var app = &views.Application{}
 var window = &mainWindow{}
 
 type mainWindow struct {
-	main   *views.CellView
-	keybar *views.SimpleStyledText
-	status *views.SimpleStyledTextBar
-	model  *model
+	main *views.CellView
+	//keybar *views.SimpleStyledText
+	//status *views.SimpleStyledTextBar
+	model *model
 	views.Panel
 }
 
 type model struct {
 	x, y       int
 	enab, hide bool
+	endx       int
+	endy       int
 }
 
 func (m *model) GetCell(x, y int) (rune, tcell.Style, []rune, int) {
@@ -48,7 +50,7 @@ func (m *model) GetCell(x, y int) (rune, tcell.Style, []rune, int) {
 }
 
 func (m *model) GetBounds() (int, int) {
-	return 10, 10
+	return m.endx, m.endy
 }
 
 func (m *model) MoveCursor(offx, offy int) {
@@ -87,12 +89,20 @@ func (a *mainWindow) HandleEvent(ev tcell.Event) bool {
 	return a.Panel.HandleEvent(ev)
 }
 
+func (a *mainWindow) Draw() {
+	a.Panel.Draw()
+}
+
 func RunGUI() {
-	window.model = &model{}
+	window.model = &model{endx: 60, endy: 15, enab: true, hide: false}
 
 	window.main = views.NewCellView()
 	window.main.SetModel(window.model)
 	window.main.SetStyle(tcell.StyleDefault.
+		Background(tcell.ColorBlack))
+	app.Update()
+	app.SetStyle(tcell.StyleDefault.
+		Foreground(tcell.ColorWhite).
 		Background(tcell.ColorBlack))
 	app.SetRootWidget(window)
 	if e := app.Run(); e != nil {
