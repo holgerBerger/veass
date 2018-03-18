@@ -2,111 +2,55 @@ package main
 
 import (
 	"fmt"
-	"os"
-
 	"github.com/gdamore/tcell"
-	"github.com/gdamore/tcell/views"
+	"os"
 )
 
-var app = &views.Application{}
-var window = &mainWindow{}
-
-type mainWindow struct {
-	main *views.CellView
-	//keybar *views.SimpleStyledText
-	//status *views.SimpleStyledTextBar
-	model *model
-	views.Panel
+type PanelModel interface {
+	GetCell(x, y int) (rune, tcell.Style, []rune, int)
 }
 
-type model struct {
-	x, y       int
-	enab, hide bool
-	endx       int
-	endy       int
+type Panel struct {
+	title       string // title, in top line, e.g. file name
+	firstline   int    // number of first line of buffer being displayed
+	cursorline  int    // line of cursor, always visible, cursor is all line
+	selectstart int    // first line of a selection
+	selectend   int    // last line of selection
 }
 
-func (m *model) GetCell(x, y int) (rune, tcell.Style, []rune, int) {
-	dig := []rune{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'}
-	var ch rune
-	style := tcell.StyleDefault
-	if x >= 60 || y >= 15 {
-		return ch, style, nil, 1
-	}
-	colors := []tcell.Color{
-		tcell.ColorWhite,
-		tcell.ColorGreen,
-		tcell.ColorMaroon,
-		tcell.ColorNavy,
-		tcell.ColorOlive,
-	}
+type View struct {
+	split bool // true if two panels should be displayed
 
-	ch = dig[(x)%len(dig)]
-	style = style.
-		Foreground(colors[(y)%len(colors)]).
-		Background(tcell.ColorBlack)
-
-	return ch, style, nil, 1
-}
-
-func (m *model) GetBounds() (int, int) {
-	return m.endx, m.endy
-}
-
-func (m *model) MoveCursor(offx, offy int) {
-	m.x += offx
-	m.y += offy
-	//m.limitCursor()
-}
-
-func (m *model) SetCursor(x int, y int) {
-	m.x = x
-	m.y = y
-
-	//m.limitCursor()
-}
-
-func (m *model) GetCursor() (int, int, bool, bool) {
-	return m.x, m.y, m.enab, !m.hide
-}
-
-func (a *mainWindow) HandleEvent(ev tcell.Event) bool {
-	switch ev := ev.(type) {
-	case *tcell.EventKey:
-		switch ev.Key() {
-		case tcell.KeyCtrlL:
-			app.Refresh()
-			return true
-		case tcell.KeyRune:
-			switch ev.Rune() {
-			case 'Q', 'q':
-				app.Quit()
-				return true
-
-			}
-		}
-	}
-	return a.Panel.HandleEvent(ev)
-}
-
-func (a *mainWindow) Draw() {
-	a.Panel.Draw()
 }
 
 func RunGUI() {
-	window.model = &model{endx: 60, endy: 15, enab: true, hide: false}
-
-	window.main = views.NewCellView()
-	window.main.SetModel(window.model)
-	window.main.SetStyle(tcell.StyleDefault.
-		Background(tcell.ColorBlack))
-	app.Update()
-	app.SetStyle(tcell.StyleDefault.
-		Foreground(tcell.ColorWhite).
-		Background(tcell.ColorBlack))
-	app.SetRootWidget(window)
-	if e := app.Run(); e != nil {
-		fmt.Fprintln(os.Stderr, e.Error())
+	screen, e := tcell.NewScreen()
+	if e != nil {
+		fmt.Fprintf(os.Stderr, "%v\n", e)
 		os.Exit(1)
 	}
+
+	quit := make(chan struct{})
+
+	go func() {
+		for {
+			ev := screen.PollEvent()
+			switch ev := ev.(type) {
+			case *tcell.EventKey:
+				switch ev.Key() {
+				case tcell.KeyEscape, tcell.KeyEnter:
+					close(quit)
+					return
+				case tcell.KeyCtrlL:
+					screen.Sync()
+				}
+			case *tcell.EventResize:
+				screen.Sync()
+			}
+		}
+	}()
+
+	<-quit
+
+	screen.Fini()
 }
