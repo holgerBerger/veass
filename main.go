@@ -7,13 +7,13 @@ import (
 
 func main() {
 	var (
-		//assemblerfile *AssemblerFile
-		err error
+		assemblerfile *AssemblerFile
+		err           error
 	)
 
 	filename := os.Args[1]
 	if filename[len(filename)-2:] == ".s" {
-		_, err = NewAssemblerFile(filename)
+		assemblerfile, err = NewAssemblerFile(filename)
 		if err != nil {
 			panic(err)
 		}
@@ -22,5 +22,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	RunGUI()
+	assemblermodel := &assemblerModelT{file: assemblerfile.filebuffer}
+
+	RunGUI(assemblermodel)
 }
