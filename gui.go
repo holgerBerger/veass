@@ -2,8 +2,9 @@ package main
 
 import (
 	"fmt"
-	"github.com/gdamore/tcell"
 	"os"
+
+	"github.com/gdamore/tcell"
 )
 
 type PanelModel interface {
@@ -91,7 +92,7 @@ func (v *View) Redraw() {
 
 	// left panel body
 	// FIXME
-	for y := 1; y < h-7; y++ {
+	for y := 1; y < h-6; y++ {
 		for x := 0; x < (*v.left.model).GetLineLen(y); x++ {
 			r, s := (*v.left.model).GetCell(x, y)
 			(*v.screen).SetContent(x, y, r, nil, s)
@@ -100,7 +101,7 @@ func (v *View) Redraw() {
 
 }
 
-func RunGUI(assemblermodel *assemblerModelT) {
+func RunGUI(assemblermodel PanelModel) {
 	screen, e := tcell.NewScreen()
 	if e != nil {
 		fmt.Fprintf(os.Stderr, "%v\n", e)
@@ -110,7 +111,7 @@ func RunGUI(assemblermodel *assemblerModelT) {
 	quit := make(chan struct{})
 
 	view := NewView(&screen)
-	leftPanel := &Panel{title: "LEFT"}
+	leftPanel := &Panel{title: "LEFT", model: &assemblermodel}
 	rightPanel := &Panel{title: "RIGHT"}
 	bottomPanel := &Panel{title: "information"}
 	view.left = leftPanel
