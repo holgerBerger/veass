@@ -93,8 +93,9 @@ func (v *View) Redraw() {
 	// left panel body
 	// FIXME
 	for y := 1; y < h-5; y++ {
-		for x := 0; x < mini(hw, (*v.left.model).GetLineLen(y)); x++ {
-			r, s := (*v.left.model).GetCell(x, y)
+		lnr := y + (*v.left).firstline
+		for x := 0; x < mini(hw, (*v.left.model).GetLineLen(lnr)); x++ {
+			r, s := (*v.left.model).GetCell(x, lnr)
 			(*v.screen).SetContent(x, y, r, nil, s)
 		}
 	}
@@ -144,6 +145,14 @@ func RunGUI(assemblermodel PanelModel) {
 				case tcell.KeyEscape, tcell.KeyEnter:
 					close(quit)
 					return
+				case tcell.KeyDown:
+					view.left.firstline++
+					view.Redraw()
+					screen.Sync()
+				case tcell.KeyUp:
+					view.left.firstline--
+					view.Redraw()
+					screen.Sync()
 				case tcell.KeyCtrlL:
 					screen.Sync()
 					view.Redraw()
