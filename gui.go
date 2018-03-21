@@ -98,6 +98,11 @@ func (v *View) Redraw() {
 			r, s := (*v.left.model).GetCell(x, lnr)
 			(*v.screen).SetContent(x, y, r, nil, s)
 		}
+		if mini(hw, (*v.left.model).GetLineLen(lnr)) < hw {
+			for x := mini(hw, (*v.left.model).GetLineLen(lnr)); x < hw; x++ {
+				(*v.screen).SetContent(x, y, ' ', nil, tcell.StyleDefault)
+			}
+		}
 	}
 
 }
@@ -148,11 +153,11 @@ func RunGUI(assemblermodel PanelModel) {
 				case tcell.KeyDown:
 					view.left.firstline++
 					view.Redraw()
-					screen.Sync()
+					screen.Show()
 				case tcell.KeyUp:
 					view.left.firstline--
 					view.Redraw()
-					screen.Sync()
+					screen.Show()
 				case tcell.KeyCtrlL:
 					screen.Sync()
 					view.Redraw()
