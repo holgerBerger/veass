@@ -50,7 +50,7 @@ func (f *FileBuffer) Addline(linenr int, line string) {
 	if (*lb).len == 0 {
 		(*lb).firstline = linenr
 	}
-	(*lb).lines[(*lb).len] = line
+	(*lb).lines[(*lb).len] = expandtabs(line)
 	(*lb).lastline = linenr
 	(*lb).len++
 }
@@ -63,4 +63,20 @@ func (f *FileBuffer) GetLine(linenr int) string {
 		panic("Internal error!")
 	}
 	return (*lb).lines[linenr-(*lb).firstline]
+}
+
+func expandtabs(line string) string {
+	var result string
+	var spaces int
+	for pos := 0; pos < len(line); pos++ {
+		if line[pos] == '\t' {
+			spaces = (((pos / 8) + 1) * 8) - pos
+			for i := 0; i < spaces; i++ {
+				result += " "
+			}
+		} else {
+			result += string(line[pos])
+		}
+	}
+	return result
 }

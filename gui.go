@@ -92,13 +92,21 @@ func (v *View) Redraw() {
 
 	// left panel body
 	// FIXME
-	for y := 1; y < h-6; y++ {
-		for x := 0; x < (*v.left.model).GetLineLen(y); x++ {
+	for y := 1; y < h-5; y++ {
+		for x := 0; x < mini(hw, (*v.left.model).GetLineLen(y)); x++ {
 			r, s := (*v.left.model).GetCell(x, y)
 			(*v.screen).SetContent(x, y, r, nil, s)
 		}
 	}
 
+}
+
+func mini(a, b int) int {
+	if a < b {
+		return a
+	} else {
+		return b
+	}
 }
 
 func RunGUI(assemblermodel PanelModel) {
@@ -141,8 +149,9 @@ func RunGUI(assemblermodel PanelModel) {
 					view.Redraw()
 				}
 			case *tcell.EventResize:
-				screen.Sync()
+				screen.Clear()
 				view.Redraw()
+				screen.Sync()
 			}
 		}
 	}()
