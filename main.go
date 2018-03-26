@@ -23,6 +23,10 @@ func main() {
 	}
 
 	assemblermodel := &assemblerModelT{file: assemblerfile.filebuffer}
+	_ = assemblermodel
 
-	RunGUI(assemblermodel)
+	tui := NewTui()
+
+	tui.Run()
+
 }
