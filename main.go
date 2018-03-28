@@ -22,7 +22,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	assemblermodel := &assemblerModelT{file: assemblerfile.filebuffer}
+	assemblermodel := NewAssemblerModel(assemblerfile.filebuffer)
 
 	tui := NewTui()
 

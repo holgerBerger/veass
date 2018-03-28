@@ -42,14 +42,16 @@ func NewTui() *TuiT {
 
 	// gc.UseDefaultColors() // do not invert
 
-	/*
-		if !gc.CanChangeColor() {
-			panic("can not change colors!")
-		}
-	*/
+	if gc.CanChangeColor() {
+		gc.InitColor(gc.C_WHITE, 1000, 1000, 1000)
+	}
 
-	gc.InitPair(1, gc.C_WHITE, gc.C_BLACK)  // 1 = Black on White, normal text
-	gc.InitPair(2, gc.C_BLACK, gc.C_YELLOW) // 2 = Black on yellow, selection
+	gc.InitPair(1, gc.C_WHITE, gc.C_BLACK)   // 1 = Black on White, normal text
+	gc.InitPair(2, gc.C_BLACK, gc.C_YELLOW)  // 2 = Black on yellow, selection
+	gc.InitPair(3, gc.C_BLUE, gc.C_BLACK)    // 3 = Blue on black, comments
+	gc.InitPair(4, gc.C_RED, gc.C_BLACK)     // 4 = Red on black, labels
+	gc.InitPair(5, gc.C_CYAN, gc.C_BLACK)    // 5 = Green on black, directives
+	gc.InitPair(6, gc.C_MAGENTA, gc.C_BLACK) // 6 = Magenta on black, local labels
 
 	newtui.maxy, newtui.maxx = newtui.scr.MaxYX()
 
@@ -78,6 +80,7 @@ func NewTui() *TuiT {
 		panic(err)
 	}
 
+	newtui.top.Color(1)
 	newtui.top.Erase()
 	newtui.bottom.Erase()
 
@@ -126,22 +129,29 @@ func (t *TuiT) drawline(y int) {
 		t.top.ColorOn(color)
 
 		if y == t.topcursor {
-			t.top.AttrOn(gc.A_REVERSE)
+			// t.top.AttrOn(gc.A_REVERSE)
+			t.top.AttrOn(gc.A_BOLD)
 		}
 		t.top.MovePrint(y, x, string(r))
 
 		t.top.AttrOff(attr | gc.A_DIM)
-		t.top.AttrOff(gc.A_REVERSE)
+		// t.top.AttrOff(gc.A_REVERSE)
+		t.top.AttrOff(gc.A_BOLD)
 	}
-	// draw end of line after string
-	if y == t.topcursor {
-		t.top.AttrOn(gc.A_REVERSE)
-		l := mini(t.maxx, t.topmodel.GetLineLen(y+t.toptopline))
-		t.top.MovePrint(y, l, fmt.Sprintf("%-*s", t.maxx-l, ""))
-		t.top.AttrOff(gc.A_REVERSE)
-	} else {
-		t.top.ClearToEOL()
-	}
+	t.top.ClearToEOL()
+	/*
+		// draw end of line after string
+		if y == t.topcursor {
+			//t.top.AttrOn(gc.A_REVERSE)
+			t.top.AttrOn(gc.A_BOLD)
+			l := mini(t.maxx, t.topmodel.GetLineLen(y+t.toptopline))
+			t.top.MovePrint(y, l, fmt.Sprintf("%-*s", t.maxx-l, ""))
+			//t.top.AttrOff(gc.A_REVERSE)
+			t.top.AttrOff(gc.A_BOLD)
+		} else {
+			t.top.ClearToEOL()
+		}
+	*/
 }
 
 func (t *TuiT) refreshtop() {
