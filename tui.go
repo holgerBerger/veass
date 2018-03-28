@@ -141,13 +141,13 @@ func (t *TuiT) refreshtop() {
 // move cursor DOWN
 func (t *TuiT) sdowntop() {
 	updated := false
-	if t.topcursor < t.toplines-2 {
+	if t.topcursor < t.toplines-2 && t.topcursor < t.topmodel.GetNrLines()-1 {
 		t.topcursor++
 		t.drawline(t.topcursor - 1)
 		t.drawline(t.topcursor)
 		updated = true
 	} else {
-		if t.toptopline+t.toplines < t.topmodel.GetNrLines() {
+		if t.toptopline+t.toplines < t.topmodel.GetNrLines()+2 {
 			t.top.Scroll(1)
 			t.toptopline++
 			t.drawline(t.toplines - 1) // new line
@@ -185,6 +185,16 @@ func (t *TuiT) suptop() {
 	}
 }
 
+func (t *TuiT) pagedowntop() {
+	t.toptopline = mini(t.topmodel.GetNrLines()-t.toplines+1, t.toptopline+t.toplines)
+	t.Refresh()
+}
+
+func (t *TuiT) pageuptop() {
+	t.toptopline = maxi(1, t.toptopline-t.toplines)
+	t.Refresh()
+}
+
 func (t *TuiT) Run() {
 	t.Refresh()
 main:
@@ -196,6 +206,11 @@ main:
 			t.sdowntop()
 		case gc.KEY_UP:
 			t.suptop()
+		case gc.KEY_PAGEDOWN:
+			t.pagedowntop()
+		case gc.KEY_PAGEUP:
+			t.pageuptop()
+
 		}
 	}
 	gc.End()
@@ -203,6 +218,14 @@ main:
 
 func mini(a, b int) int {
 	if a < b {
+		return a
+	} else {
+		return b
+	}
+}
+
+func maxi(a, b int) int {
+	if a > b {
 		return a
 	} else {
 		return b

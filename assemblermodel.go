@@ -22,5 +22,9 @@ func (a assemblerModelT) GetNrLines() int {
 }
 
 func (a assemblerModelT) GetLineLen(line int) int {
-	return len(a.file.GetLine(line))
+	if line <= a.GetNrLines() {
+		return len(a.file.GetLine(line))
+	} else {
+		return 0
+	}
 }
