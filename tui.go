@@ -2,6 +2,9 @@ package main
 
 import (
 	"fmt"
+	"os"
+	"os/signal"
+	"syscall"
 
 	gc "github.com/rthornton128/goncurses"
 )
@@ -48,13 +51,13 @@ func NewTui() *TuiT {
 	gc.InitPair(1, gc.C_WHITE, gc.C_BLACK)  // 1 = Black on White, normal text
 	gc.InitPair(2, gc.C_BLACK, gc.C_YELLOW) // 2 = Black on yellow, selection
 
-	newtui.scr.SetBackground(gc.C_WHITE)
-
 	newtui.maxy, newtui.maxx = newtui.scr.MaxYX()
 
 	gc.Raw(true)
 	gc.Echo(false)
 	gc.Cursor(0)
+
+	newtui.scr.Keypad(true)
 
 	newtui.toplines = newtui.maxy - 5
 	newtui.toptopline = 1
@@ -90,7 +93,23 @@ func NewTui() *TuiT {
 	newtui.bottom.NoutRefresh()
 	gc.Update()
 
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, syscall.SIGWINCH)
+
+	go func(c chan os.Signal) {
+		for {
+			_ = <-c
+			newtui.Resize()
+		}
+	}(c)
+
 	return &newtui
+}
+
+func (t *TuiT) Resize() {
+	t.maxy, t.maxx = t.scr.MaxYX()
+	t.toplines = t.maxy - 5
+	t.Refresh()
 }
 
 func (t *TuiT) Refresh() {
@@ -210,7 +229,8 @@ main:
 			t.pagedowntop()
 		case gc.KEY_PAGEUP:
 			t.pageuptop()
-
+		case gc.KEY_RESIZE:
+			t.bottom.Println("resize!")
 		}
 	}
 	gc.End()
