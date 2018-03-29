@@ -275,6 +275,7 @@ func (t *TuiT) pageuptop() {
 // explain an assembly instruction
 func (t *TuiT) explain() {
 	line := t.topmodel.GetLine(t.toptopline + t.topcursor)
+	// find main explanation
 	m := t.explainre.FindStringSubmatch(line)
 	if m == nil {
 		// for lines without spaces at end
@@ -308,6 +309,33 @@ func (t *TuiT) explain() {
 			}
 		}
 	}
+	// explain suffixes
+	tokens := strings.Fields(line)
+	first := true
+	for suffix := range suffixes {
+		if strings.Index(tokens[0]+".", suffix+".") >= 0 {
+			if !first {
+				t.bottom.Print(", ")
+			}
+			t.bottom.Print(suffix, ":", suffixes[suffix])
+			first = false
+		}
+	}
+	// explain registers
+	if !first {
+		t.bottom.Println()
+	}
+	first = true
+	for register := range registers {
+		if strings.Index(line, register) >= 0 {
+			if !first {
+				t.bottom.Print(", ")
+			}
+			t.bottom.Print(register, ":", registers[register])
+			first = false
+		}
+	}
+
 	t.bottom.NoutRefresh()
 	gc.Update()
 }
