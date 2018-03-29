@@ -11,9 +11,15 @@ package main
 import (
 	"fmt"
 	"os"
+
+	flags "github.com/jessevdk/go-flags"
 )
 
 var version string
+
+var opts struct {
+	Sourcedirs string `long:"sourcedirs" short:"s" description:"comma seperated list of directories to search for source files"`
+}
 
 func main() {
 	var (
@@ -21,14 +27,17 @@ func main() {
 		err           error
 	)
 
-	if len(os.Args) < 2 {
+	args, err := flags.Parse(&opts)
+
+	if len(args) < 1 {
 		fmt.Println("veass version", version)
 		fmt.Println("usage: veass <file.s>")
 		os.Exit(0)
 	}
 
-	filename := os.Args[1]
+	filename := args[0]
 	if filename[len(filename)-2:] == ".s" {
+		fmt.Println("reading source file and bulding index, this can take a few seconds")
 		assemblerfile, err = NewAssemblerFile(filename)
 		if err != nil {
 			panic(err)
