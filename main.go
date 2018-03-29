@@ -13,6 +13,8 @@ import (
 	"os"
 )
 
+var version string
+
 func main() {
 	var (
 		assemblerfile *AssemblerFile
@@ -20,6 +22,7 @@ func main() {
 	)
 
 	if len(os.Args) < 2 {
+		fmt.Println("veass version", version)
 		fmt.Println("usage: veass <file.s>")
 		os.Exit(0)
 	}
