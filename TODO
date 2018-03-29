@@ -6,7 +6,6 @@ features:
 soon:
 
 assembler
-- display of filename/currentline/total lines in status bar topbar
 - searching in assembler text/back/forward/next/previous as vi
 - more vi navigation, jump to line numbers, end of file
 - jump to next and previous global symbol
