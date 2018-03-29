@@ -1,5 +1,13 @@
 package main
 
+/*
+	main
+
+	read assembly file
+	start gui
+
+*/
+
 import (
 	"fmt"
 	"os"

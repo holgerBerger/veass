@@ -1,5 +1,35 @@
 package main
 
+/*
+
+	text user interface
+
+	this draws everything on screen
+
+	we have
+	+---------------------------+
+	|top												|
+	|														|
+	|														|
+	=topbar======================
+	|middle (optional)					|
+	|														|
+	=middlebar===================
+	|bottom											|
+	+----------------------------
+
+	top is for assembly (can take focus and input)
+	middle for source code (can take focus and input)
+	bottom for messages (read only)
+
+	this is a hack, unproper model/view architecture
+
+	ncurses sucks, therefor we stick to 8 colors atm.
+	ncurses is very hard coded here, tcell was to slow
+	for remote usage
+
+*/
+
 import (
 	"fmt"
 	"os"
@@ -9,6 +39,7 @@ import (
 	gc "github.com/rthornton128/goncurses"
 )
 
+// TuiT is top level data structure
 type TuiT struct {
 	scr        *gc.Window
 	maxx, maxy int
@@ -18,14 +49,15 @@ type TuiT struct {
 	middlebar  *gc.Window
 	bottom     *gc.Window
 
-	toptopline int // file coordinate
-	toplines   int // number of lines of top panel
-	topcursor  int // screen coordinate of cursor line
+	toptopline int // file coordinate, 1 in beginning, line number of first line on screen
+	toplines   int // number of lines of top panel (size, has to be updated in resize)
+	topcursor  int // screen coordinate of cursor line (0-(toplines-2))
 
 	topmodel   PanelModel
 	topbartext string
 }
 
+// NewTui constructs a user interface, inits ncurses, colors etc
 func NewTui() *TuiT {
 	var newtui TuiT
 	var err error
@@ -46,6 +78,7 @@ func NewTui() *TuiT {
 		gc.InitColor(gc.C_WHITE, 1000, 1000, 1000)
 	}
 
+	// FIXME make those constants named
 	gc.InitPair(1, gc.C_WHITE, gc.C_BLACK)   // 1 = Black on White, normal text
 	gc.InitPair(2, gc.C_BLACK, gc.C_YELLOW)  // 2 = Black on yellow, selection
 	gc.InitPair(3, gc.C_BLUE, gc.C_BLACK)    // 3 = Blue on black, comments
@@ -61,7 +94,7 @@ func NewTui() *TuiT {
 
 	newtui.scr.Keypad(true)
 
-	newtui.toplines = newtui.maxy - 5
+	newtui.toplines = newtui.maxy - 5 // size of bottom window, no middle
 	newtui.toptopline = 1
 	newtui.topcursor = 0 // cursor is in screen coordinates
 	newtui.top, err = gc.NewWindow(newtui.maxy-5, newtui.maxx, 0, 0)
@@ -86,6 +119,7 @@ func NewTui() *TuiT {
 
 	newtui.top.ScrollOk(true)
 
+	// draw emoty topbar
 	newtui.topbar.AttrOn(gc.A_REVERSE)
 	newtui.topbar.Print(fmt.Sprintf("%-*s", newtui.maxx, newtui.topbartext))
 	newtui.topbar.AttrOff(gc.A_REVERSE)
@@ -96,6 +130,7 @@ func NewTui() *TuiT {
 	newtui.bottom.NoutRefresh()
 	gc.Update()
 
+	// FIXME broken resize code
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, syscall.SIGWINCH)
 
@@ -109,12 +144,14 @@ func NewTui() *TuiT {
 	return &newtui
 }
 
+// Resize should be called on window resize
 func (t *TuiT) Resize() {
 	t.maxy, t.maxx = t.scr.MaxYX()
-	t.toplines = t.maxy - 5
+	t.toplines = t.maxy - 5 // FIXME, no middle here
 	t.Refresh()
 }
 
+// Refresh draws everything, can be used for paging or resize
 func (t *TuiT) Refresh() {
 	t.refreshtop()
 	gc.Update()
@@ -139,21 +176,22 @@ func (t *TuiT) drawline(y int) {
 		t.top.AttrOff(gc.A_BOLD)
 	}
 	t.top.ClearToEOL()
-	/*
-		// draw end of line after string
-		if y == t.topcursor {
-			//t.top.AttrOn(gc.A_REVERSE)
-			t.top.AttrOn(gc.A_BOLD)
-			l := mini(t.maxx, t.topmodel.GetLineLen(y+t.toptopline))
-			t.top.MovePrint(y, l, fmt.Sprintf("%-*s", t.maxx-l, ""))
-			//t.top.AttrOff(gc.A_REVERSE)
-			t.top.AttrOff(gc.A_BOLD)
-		} else {
-			t.top.ClearToEOL()
-		}
+	/* old code for inverse cursor, not needed for bold cursor
+	// draw end of line after string
+	if y == t.topcursor {
+		//t.top.AttrOn(gc.A_REVERSE)
+		t.top.AttrOn(gc.A_BOLD)
+		l := mini(t.maxx, t.topmodel.GetLineLen(y+t.toptopline))
+		t.top.MovePrint(y, l, fmt.Sprintf("%-*s", t.maxx-l, ""))
+		//t.top.AttrOff(gc.A_REVERSE)
+		t.top.AttrOff(gc.A_BOLD)
+	} else {
+		t.top.ClearToEOL()
+	}
 	*/
 }
 
+// full redraw of top windows
 func (t *TuiT) refreshtop() {
 	for y := 0; y < t.toplines; y++ {
 		t.drawline(y)
@@ -167,7 +205,7 @@ func (t *TuiT) refreshtop() {
 	t.topbar.NoutRefresh()
 }
 
-// move cursor DOWN
+// move cursor DOWN top window
 func (t *TuiT) sdowntop() {
 	updated := false
 	if t.topcursor < t.toplines-2 && t.topcursor < t.topmodel.GetNrLines()-1 {
@@ -191,7 +229,7 @@ func (t *TuiT) sdowntop() {
 	}
 }
 
-// move cursor UP
+// move cursor UP top window
 func (t *TuiT) suptop() {
 	updated := false
 	if t.topcursor > 0 {
@@ -214,16 +252,19 @@ func (t *TuiT) suptop() {
 	}
 }
 
+// page down top window
 func (t *TuiT) pagedowntop() {
 	t.toptopline = mini(t.topmodel.GetNrLines()-t.toplines+1, t.toptopline+t.toplines)
 	t.Refresh()
 }
 
+// page up top window
 func (t *TuiT) pageuptop() {
 	t.toptopline = maxi(1, t.toptopline-t.toplines)
 	t.Refresh()
 }
 
+// Run is the UI main event loop
 func (t *TuiT) Run() {
 	t.Refresh()
 main:
@@ -246,18 +287,18 @@ main:
 	gc.End()
 }
 
+// min of 2 int
 func mini(a, b int) int {
 	if a < b {
 		return a
-	} else {
-		return b
 	}
+	return b
 }
 
+// max of 2 int
 func maxi(a, b int) int {
 	if a > b {
 		return a
-	} else {
-		return b
 	}
+	return b
 }

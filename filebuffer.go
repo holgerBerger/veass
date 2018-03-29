@@ -1,16 +1,30 @@
 package main
 
+/*
+
+	data structire to store a file line by line
+	organized as a Slice of pointers to blocks,
+	top level data structure has unlimited size,
+	data blocks it points to are fixed in size (lineblocksize)
+	This allows for fast access to certain lines and is somehow
+	space efficient.
+	it is a "insert once and read often but never update" format.
+
+*/
+
 import "fmt"
 
 const lineblocksize = 1024 // number of lines in one block
 const initialblocks = 1024 // initial number of slots for lineblocks
 
+// FileBuffer is the top level data structure to store a file, refering to LineBlocks
 type FileBuffer struct {
 	name       string
 	lineblocks []*LineBlock
 	appendin   int
 }
 
+// LineBlock is the second level structure holding the file lines
 type LineBlock struct {
 	lines               [lineblocksize]string
 	len                 int // lines in this list
@@ -24,7 +38,7 @@ func NewFileBuffer(name string) *FileBuffer {
 		initiallineblock LineBlock
 	)
 
-	// get space for 1024 blocks, and allocate one block for 1024 lines
+	// get space for <initialblocks> blocks, and allocate one block for <lineblocksize> lines
 	filebuffer.lineblocks = make([]*LineBlock, 0, initialblocks)
 	filebuffer.name = name
 	filebuffer.lineblocks = append(filebuffer.lineblocks, &initiallineblock)
@@ -65,6 +79,7 @@ func (f *FileBuffer) GetLine(linenr int) string {
 	return (*lb).lines[linenr-(*lb).firstline]
 }
 
+// expandtabs replaces tab with spaces, we assume tabs of width 8 here
 func expandtabs(line string) string {
 	var result string
 	var spaces int

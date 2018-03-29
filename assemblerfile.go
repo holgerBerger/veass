@@ -32,6 +32,7 @@ type loctuple struct {
 	fileid, linenr int
 }
 
+// AssemblerFile is the class to represent the file and its locations tables
 type AssemblerFile struct {
 	filebuffer    *FileBuffer        // the associated buffer storing the file
 	filenametable []string           // table of filename
