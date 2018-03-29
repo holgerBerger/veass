@@ -205,7 +205,7 @@ func (t *TuiT) refreshtopbar() {
 	t.topbar.Erase()
 	t.topbar.AttrOn(gc.A_REVERSE)
 	t.topbar.Color(1)
-	t.topbar.Print(fmt.Sprintf("%-*s", t.maxx, " "+t.topmodel.GetFilename()))
+	t.topbar.Print(fmt.Sprintf("%-*s", t.maxx, " "+t.topmodel.GetFilename()+" in global symbol: "+t.topmodel.GetSymbol(t.toptopline+t.topcursor)))
 	t.topbar.MovePrint(0, t.maxx-20, fmt.Sprintf("%d/%d", t.toptopline+t.topcursor, t.topmodel.GetNrLines()))
 	t.topbar.AttrOff(gc.A_REVERSE)
 	t.topbar.NoutRefresh()

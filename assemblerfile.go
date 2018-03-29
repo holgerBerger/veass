@@ -29,8 +29,15 @@ import (
 	"strings"
 )
 
+// used to jump from source into assembler
 type loctuple struct {
 	fileid, linenr int
+}
+
+// for each line we store this information, indexed by assembly file line number
+type indextuple struct {
+	loc    loctuple // source location, file and line#
+	symbol string   // last=current global symbol
 }
 
 // AssemblerFile is the class to represent the file and its locations tables
@@ -38,6 +45,7 @@ type AssemblerFile struct {
 	filebuffer    *FileBuffer        // the associated buffer storing the file
 	filenametable []string           // table of filename
 	loctable      map[loctuple][]int // table mapping loctuple to linenumber in assembler file
+	index         []indextuple       // table of location information indexed by line number
 }
 
 // NewAssemblerFile reads a file into a filebuffer
@@ -59,6 +67,8 @@ func NewAssemblerFile(filename string) (*AssemblerFile, error) {
 
 	reader := bufio.NewReaderSize(ifile, 1024*1024) // get a nice buffer
 
+	// FIXME why is this so slow?
+	fmt.Print("Reading file...")
 	linecount := 1
 	for {
 		// read line from file, bail out at end of file
@@ -73,10 +83,29 @@ func NewAssemblerFile(filename string) (*AssemblerFile, error) {
 		// append to buffer
 		newfile.filebuffer.Addline(linecount, strline)
 
+		// now we are done, push up linenumber
+		linecount++
+	}
+
+	// now we know how many lines we have
+	newfile.index = make([]indextuple, linecount)
+
+	// go over all lines again
+	fmt.Println("\nIndexing file...")
+	curloc := loctuple{}
+	cursymbol := ""
+	// process lines
+	for cl := 1; cl < linecount; cl++ {
+		strline := newfile.filebuffer.GetLine(cl)
 		// process the line, search for .file and .loc and <# line nr>
 		if strline[0] == '#' {
 			if strings.Index(strline, "# line") != -1 {
-				// FIXME
+				flds := strings.Fields(strline)
+				linenr, err := strconv.Atoi(flds[2])
+				if err != nil {
+					panic(err)
+				}
+				curloc = loctuple{0, linenr}
 			}
 		} else {
 			// search for first non-blank character
@@ -102,8 +131,9 @@ func NewAssemblerFile(filename string) (*AssemblerFile, error) {
 						newfile.loctable[loctuple{fileid, linenr}] = make([]int, 0, 16)
 					}
 					newfile.loctable[loctuple{fileid, linenr}] = append(newfile.loctable[loctuple{fileid, linenr}], linecount)
+					curloc = loctuple{fileid, linenr}
 				} else if strings.Index(strline[pos:], ".file ") != -1 {
-					// collect filenames, the without index is current file and in position 0
+					// collect filenames, the one without index is current file and in position 0
 					flds := strings.Fields(strline[pos:])
 					if len(flds) > 2 {
 						newfile.filenametable = append(newfile.filenametable, flds[2][1:len(flds[2])-1])
@@ -112,13 +142,13 @@ func NewAssemblerFile(filename string) (*AssemblerFile, error) {
 						newfile.filenametable = append(newfile.filenametable, flds[1][1:len(flds[1])-1])
 						expandfilename(flds[1][1 : len(flds[1])-1])
 					}
+				} else if strings.Index(strline[pos:], ".globl ") != -1 {
+					cursymbol = strings.Fields(strline[pos:])[1]
 				}
-			}
+			} // lines with .
 		}
-
-		// now we are done, push up linenumber
-		linecount++
-	}
+		newfile.index[cl] = indextuple{curloc, cursymbol}
+	} // loop process lines
 
 	return &newfile, nil
 }
@@ -140,6 +170,6 @@ func expandfilename(fn string) string {
 			}
 		}
 	}
-	fmt.Println("did not find source", fn)
+	fmt.Println("could not find source", fn)
 	return fn
 }

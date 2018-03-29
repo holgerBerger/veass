@@ -27,6 +27,17 @@ func main() {
 		err           error
 	)
 
+	/*
+		f1, err := os.Create("cpuprofile")
+		if err != nil {
+			log.Fatal("could not create CPU profile: ", err)
+		}
+		if err := pprof.StartCPUProfile(f1); err != nil {
+			log.Fatal("could not start CPU profile: ", err)
+		}
+		defer pprof.StopCPUProfile()
+	*/
+
 	args, err := flags.Parse(&opts)
 
 	if len(args) < 1 {
@@ -37,7 +48,6 @@ func main() {
 
 	filename := args[0]
 	if filename[len(filename)-2:] == ".s" {
-		fmt.Println("reading source file and bulding index, this can take a few seconds")
 		assemblerfile, err = NewAssemblerFile(filename)
 		if err != nil {
 			panic(err)
@@ -47,7 +57,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	assemblermodel := NewAssemblerModel(assemblerfile.filebuffer)
+	assemblermodel := NewAssemblerModel(assemblerfile)
 
 	tui := NewTui()
 
@@ -55,4 +65,15 @@ func main() {
 
 	tui.Run()
 
+	/*
+		f2, err := os.Create("memprofile")
+		if err != nil {
+			log.Fatal("could not create memory profile: ", err)
+		}
+		runtime.GC() // get up-to-date statistics
+		if err := pprof.WriteHeapProfile(f2); err != nil {
+			log.Fatal("could not write memory profile: ", err)
+		}
+		f2.Close()
+	*/
 }

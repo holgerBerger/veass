@@ -16,20 +16,22 @@ import (
 
 // AssemblerModel implements PanelModel to allow a viewer to get characters and attributes of certain coordinates in file
 type AssemblerModel struct {
-	file         *FileBuffer    // reference to underleying data
-	lastline     string         // caching: buffer last line
-	lastlinenr   int            // caching: buffer number of last line
-	lastcolor    int16          // caching: color number of last call
-	recomment    *regexp.Regexp // optimization: precompiled regexps
-	relabel      *regexp.Regexp
-	relocallabel *regexp.Regexp
-	redirective  *regexp.Regexp
+	assemblerfile *AssemblerFile // reference to prepared data
+	file          *FileBuffer    // reference to underleying data
+	lastline      string         // caching: buffer last line
+	lastlinenr    int            // caching: buffer number of last line
+	lastcolor     int16          // caching: color number of last call
+	recomment     *regexp.Regexp // optimization: precompiled regexps
+	relabel       *regexp.Regexp
+	relocallabel  *regexp.Regexp
+	redirective   *regexp.Regexp
 }
 
 // NewAssemblerModel creates a model for the view into an assemblefile
-func NewAssemblerModel(filebuffer *FileBuffer) *AssemblerModel {
+func NewAssemblerModel(assemblerfile *AssemblerFile) *AssemblerModel {
 	var na AssemblerModel
-	na.file = filebuffer
+	na.assemblerfile = assemblerfile
+	na.file = assemblerfile.filebuffer
 	na.recomment = regexp.MustCompile("^#.*")
 	na.relabel = regexp.MustCompile(`^\S+:.*`)
 	na.relocallabel = regexp.MustCompile(`^\.\S+:.*`)
@@ -94,4 +96,9 @@ func (a AssemblerModel) GetLine(line int) string {
 // GetFilename returns the filename
 func (a AssemblerModel) GetFilename() string {
 	return a.file.name
+}
+
+// GetSymbol returns the global symbol precedding a line
+func (a AssemblerModel) GetSymbol(line int) string {
+	return a.assemblerfile.index[line].symbol
 }
