@@ -23,6 +23,7 @@ package main
 
 import (
 	"bufio"
+	"fmt"
 	"os"
 	"strconv"
 	"strings"
@@ -105,8 +106,10 @@ func NewAssemblerFile(filename string) (*AssemblerFile, error) {
 					flds := strings.Fields(strline[pos:])
 					if len(flds) > 2 {
 						newfile.filenametable = append(newfile.filenametable, flds[2][1:len(flds[2])-1])
+						expandfilename(flds[2][1 : len(flds[2])-1])
 					} else {
 						newfile.filenametable = append(newfile.filenametable, flds[1][1:len(flds[1])-1])
+						expandfilename(flds[1][1 : len(flds[1])-1])
 					}
 				}
 			}
@@ -117,4 +120,25 @@ func NewAssemblerFile(filename string) (*AssemblerFile, error) {
 	}
 
 	return &newfile, nil
+}
+
+// expandfilename prepends searchpath, so we can later just open and read
+func expandfilename(fn string) string {
+	if _, err := os.Stat(fn); err == nil {
+		fmt.Println("found source", fn)
+		return fn
+	}
+	if fn[0] != '/' && len(opts.Sourcedirs) > 0 {
+		sp := strings.Split(opts.Sourcedirs, ",")
+		for _, p := range sp {
+			testpath := p + "/" + fn
+			//fmt.Println("trying ", testpath)
+			if _, err := os.Stat(testpath); err == nil {
+				fmt.Println("found source", fn, "at", testpath)
+				return testpath
+			}
+		}
+	}
+	fmt.Println("did not find source", fn)
+	return fn
 }
