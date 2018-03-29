@@ -86,7 +86,7 @@ func (a AssemblerModel) GetLineLen(line int) int {
 	return 0
 }
 
-// Getline returns line without anyu processing (tabs expanded)
+// GetLine returns line without anyu processing (tabs expanded)
 func (a AssemblerModel) GetLine(line int) string {
 	return a.file.GetLine(line)
 }
