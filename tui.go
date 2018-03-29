@@ -270,13 +270,34 @@ func (t *TuiT) suptop() {
 
 // page down top window
 func (t *TuiT) pagedowntop() {
-	t.toptopline = mini(t.topmodel.GetNrLines()-t.toplines+1, t.toptopline+t.toplines)
-	t.Refresh()
+	if t.toptopline+t.toplines > t.topmodel.GetNrLines() {
+		// this means all file is on screen, lets move cursor to end of files
+		t.jumpendtop()
+	} else {
+		t.toptopline = mini(t.topmodel.GetNrLines()-t.toplines+1, t.toptopline+t.toplines)
+		t.Refresh()
+	}
 }
 
 // page up top window
 func (t *TuiT) pageuptop() {
+	if t.toptopline == 1 {
+		t.topcursor = 0
+	}
 	t.toptopline = maxi(1, t.toptopline-t.toplines)
+	t.Refresh()
+}
+
+func (t *TuiT) jumphometop() {
+	t.toptopline = 1
+	t.topcursor = 0
+	t.Refresh()
+}
+
+func (t *TuiT) jumpendtop() {
+	t.top.Erase()
+	t.toptopline = maxi(1, t.topmodel.GetNrLines()-t.toplines+2)
+	t.topcursor = mini(t.topmodel.GetNrLines()-t.toptopline, t.toplines)
 	t.Refresh()
 }
 
@@ -348,13 +369,32 @@ func (t *TuiT) explain() {
 	gc.Update()
 }
 
+// help prints keyboard help
+func (t *TuiT) help() {
+	t.bottom.Erase()
+	t.bottom.Print(" <up>/<down>: move cursor, <pageup>/<down>: jump page wise, <home>: jump to top of file, <end>/<G>: jump to end of file")
+	t.bottom.Print(" <H>/<h>/<F1>: this help,  <q>: quit,  <enter>: explain assembler instruction, ")
+	t.bottom.Print(" <p>: position information ")
+	t.bottom.NoutRefresh()
+	gc.Update()
+}
+
+func (t *TuiT) posinfo() {
+	t.bottom.Erase()
+	t.bottom.Println("in symbol", t.topmodel.GetSymbol(t.toptopline+t.topcursor))
+	filename, linenr := t.topmodel.GetPosition(t.toptopline + t.topcursor)
+	t.bottom.Println("produced for line", linenr, "in", filename)
+	t.bottom.NoutRefresh()
+	gc.Update()
+}
+
 // Run is the UI main event loop
 func (t *TuiT) Run() {
 	t.Refresh()
 main:
 	for {
 		switch t.top.GetChar() {
-		case 'q':
+		case 'q', 'Q':
 			break main
 		case gc.KEY_DOWN:
 			t.sdowntop()
@@ -364,10 +404,18 @@ main:
 			t.pagedowntop()
 		case gc.KEY_PAGEUP:
 			t.pageuptop()
+		case gc.KEY_HOME:
+			t.jumphometop()
+		case gc.KEY_END, 'G':
+			t.jumpendtop()
 		case gc.KEY_RESIZE:
 			t.bottom.Println("resize!")
 		case gc.KEY_RETURN:
 			t.explain()
+		case 'h', 'H', gc.KEY_F1:
+			t.help()
+		case 'p', 'P':
+			t.posinfo()
 		}
 	}
 	gc.End()

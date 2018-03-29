@@ -10,4 +10,5 @@ type PanelModel interface {
 	GetLine(line int) string
 	GetFilename() string
 	GetSymbol(line int) string
+	GetPosition(line int) (string, int)
 }

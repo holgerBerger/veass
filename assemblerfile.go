@@ -143,7 +143,7 @@ func NewAssemblerFile(filename string) (*AssemblerFile, error) {
 						expandfilename(flds[1][1 : len(flds[1])-1])
 					}
 				} else if strings.Index(strline[pos:], ".globl ") != -1 {
-					cursymbol = strings.Fields(strline[pos:])[1]
+					cursymbol = strings.Join(strings.Fields(strline[pos:])[1:], " ")
 				}
 			} // lines with .
 		}

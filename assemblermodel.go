@@ -102,3 +102,9 @@ func (a AssemblerModel) GetFilename() string {
 func (a AssemblerModel) GetSymbol(line int) string {
 	return a.assemblerfile.index[line].symbol
 }
+
+// GetPosition returns filename and position in source for line
+func (a AssemblerModel) GetPosition(line int) (string, int) {
+	fileid := a.assemblerfile.index[line].loc.fileid
+	return a.assemblerfile.filenametable[fileid], a.assemblerfile.index[line].loc.linenr
+}

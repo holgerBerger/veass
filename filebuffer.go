@@ -60,8 +60,9 @@ func (f *FileBuffer) Addline(linenr int, line string) {
 		var newlineblock LineBlock
 		f.lineblocks = append(f.lineblocks, &newlineblock)
 		f.appendin++
-		// some slow progress bar every 10K lines for large files
-		if f.appendin%10 == 0 {
+		// some progress bar every 50K lines for large files
+		// guess nobody will ever notice :-)
+		if f.appendin%50 == 0 {
 			fmt.Print(".")
 		}
 	}
@@ -87,7 +88,7 @@ func (f *FileBuffer) GetLine(linenr int) string {
 }
 
 // expandtabs replaces tab with spaces, we assume tabs of width 8 here
-func expandtabs_slow(line string) string {
+func expandtabsSlow(line string) string {
 	var result string
 	var spaces int
 	for pos := 0; pos < len(line); pos++ {
