@@ -1,5 +1,7 @@
 package main
 
+import "fmt"
+
 /*
 
 	data structire to store a file line by line
@@ -55,6 +57,10 @@ func (f *FileBuffer) Addline(linenr int, line string) {
 		var newlineblock LineBlock
 		f.lineblocks = append(f.lineblocks, &newlineblock)
 		f.appendin++
+		// some slow progress bar every 10K lines for large files
+		if f.appendin%10 == 0 {
+			fmt.Print("#")
+		}
 	}
 
 	// insert line and increment counters
