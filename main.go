@@ -42,7 +42,7 @@ func main() {
 
 	if len(args) < 1 {
 		fmt.Println("veass version", version)
-		fmt.Println("usage: veass <file.s>")
+		fmt.Println("usage: veass [-s|-sourcedirs dir1[,dir2,...] <file.s>")
 		os.Exit(0)
 	}
 
