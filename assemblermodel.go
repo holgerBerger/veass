@@ -1,7 +1,6 @@
 package main
 
 /*
-
 	the AssemblerModel iumplements a model part of a view/,podel architecture
 	it delivers character + attributes to caller
 	this model decides how a line appears on screen, character by characters
@@ -85,4 +84,9 @@ func (a AssemblerModel) GetLineLen(line int) int {
 		return len(a.file.GetLine(line))
 	}
 	return 0
+}
+
+// Getline returns line without anyu processing (tabs expanded)
+func (a AssemblerModel) GetLine(line int) string {
+	return a.file.GetLine(line)
 }

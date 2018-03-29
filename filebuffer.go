@@ -12,8 +12,6 @@ package main
 
 */
 
-import "fmt"
-
 const lineblocksize = 1024 // number of lines in one block
 const initialblocks = 1024 // initial number of slots for lineblocks
 
@@ -44,7 +42,7 @@ func NewFileBuffer(name string) *FileBuffer {
 	filebuffer.lineblocks = append(filebuffer.lineblocks, &initiallineblock)
 	filebuffer.appendin = 0
 
-	fmt.Println(len(filebuffer.lineblocks))
+	//fmt.Println(len(filebuffer.lineblocks))
 
 	return &filebuffer
 }

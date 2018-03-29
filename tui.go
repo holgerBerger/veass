@@ -34,6 +34,8 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"regexp"
+	"strings"
 	"syscall"
 
 	gc "github.com/rthornton128/goncurses"
@@ -55,12 +57,18 @@ type TuiT struct {
 
 	topmodel   PanelModel
 	topbartext string
+
+	ops       *Opstable
+	explainre *regexp.Regexp
 }
 
 // NewTui constructs a user interface, inits ncurses, colors etc
 func NewTui() *TuiT {
 	var newtui TuiT
 	var err error
+
+	newtui.ops = NewOpstable()
+	newtui.explainre = regexp.MustCompile(`^\s+(.+?)[\[\s].+$`)
 
 	newtui.scr, err = gc.Init()
 	if err != nil {
@@ -264,6 +272,46 @@ func (t *TuiT) pageuptop() {
 	t.Refresh()
 }
 
+// explain an assembly instruction
+func (t *TuiT) explain() {
+	line := t.topmodel.GetLine(t.toptopline + t.topcursor)
+	m := t.explainre.FindStringSubmatch(line)
+	if m == nil {
+		// for lines without spaces at end
+		r := regexp.MustCompile(`^\s+(.+?)$`)
+		m = r.FindStringSubmatch(line)
+		if m == nil {
+			return // bail out for lines not matching
+		}
+	}
+	t.bottom.Erase()
+	//t.bottom.Println("try <", m[1], "> ")
+	e := t.ops.getops(m[1])
+	if e != "" {
+		t.bottom.Println(e)
+	} else {
+		// FIXME what about . in first position?
+		tokens := strings.Split(m[1], ".")
+	outer:
+		for i := len(tokens); i >= 1; i-- {
+			o := tokens[0]
+			for j := 1; j < i; j++ {
+				o = o + "." + tokens[j]
+			}
+			if o != "" {
+				// t.bottom.Println("try <", o, "> ")
+				e := t.ops.getops(o)
+				if e != "" {
+					t.bottom.Println(e)
+					break outer
+				}
+			}
+		}
+	}
+	t.bottom.NoutRefresh()
+	gc.Update()
+}
+
 // Run is the UI main event loop
 func (t *TuiT) Run() {
 	t.Refresh()
@@ -282,6 +330,8 @@ main:
 			t.pageuptop()
 		case gc.KEY_RESIZE:
 			t.bottom.Println("resize!")
+		case gc.KEY_RETURN:
+			t.explain()
 		}
 	}
 	gc.End()
