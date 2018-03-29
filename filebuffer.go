@@ -1,6 +1,9 @@
 package main
 
-import "fmt"
+import (
+	"bytes"
+	"fmt"
+)
 
 /*
 
@@ -59,7 +62,7 @@ func (f *FileBuffer) Addline(linenr int, line string) {
 		f.appendin++
 		// some slow progress bar every 10K lines for large files
 		if f.appendin%10 == 0 {
-			fmt.Print("#")
+			fmt.Print(".")
 		}
 	}
 
@@ -84,7 +87,7 @@ func (f *FileBuffer) GetLine(linenr int) string {
 }
 
 // expandtabs replaces tab with spaces, we assume tabs of width 8 here
-func expandtabs(line string) string {
+func expandtabs_slow(line string) string {
 	var result string
 	var spaces int
 	for pos := 0; pos < len(line); pos++ {
@@ -98,4 +101,21 @@ func expandtabs(line string) string {
 		}
 	}
 	return result
+}
+
+// expandtabs replaces tab with spaces, we assume tabs of width 8 here
+func expandtabs(line string) string {
+	var result bytes.Buffer // this is 4x faster than string concatenation
+	var spaces int
+	for pos := 0; pos < len(line); pos++ {
+		if line[pos] == '\t' {
+			spaces = (((pos / 8) + 1) * 8) - pos
+			for i := 0; i < spaces; i++ {
+				result.WriteString(" ")
+			}
+		} else {
+			result.WriteRune(rune(line[pos]))
+		}
+	}
+	return result.String()
 }
