@@ -19,6 +19,11 @@ func main() {
 		err           error
 	)
 
+	if len(os.Args) < 2 {
+		fmt.Println("usage: veass <file.s>")
+		os.Exit(0)
+	}
+
 	filename := os.Args[1]
 	if filename[len(filename)-2:] == ".s" {
 		assemblerfile, err = NewAssemblerFile(filename)
