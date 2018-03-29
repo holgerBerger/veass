@@ -90,3 +90,8 @@ func (a AssemblerModel) GetLineLen(line int) int {
 func (a AssemblerModel) GetLine(line int) string {
 	return a.file.GetLine(line)
 }
+
+// GetFilename returns the filename
+func (a AssemblerModel) GetFilename() string {
+	return a.file.name
+}

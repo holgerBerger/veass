@@ -8,4 +8,5 @@ type PanelModel interface {
 	GetNrLines() int
 	GetLineLen(line int) int
 	GetLine(line int) string
+	GetFilename() string
 }

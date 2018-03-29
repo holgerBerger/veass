@@ -127,7 +127,7 @@ func NewTui() *TuiT {
 
 	newtui.top.ScrollOk(true)
 
-	// draw emoty topbar
+	// draw empty topbar
 	newtui.topbar.AttrOn(gc.A_REVERSE)
 	newtui.topbar.Print(fmt.Sprintf("%-*s", newtui.maxx, newtui.topbartext))
 	newtui.topbar.AttrOff(gc.A_REVERSE)
@@ -162,6 +162,7 @@ func (t *TuiT) Resize() {
 // Refresh draws everything, can be used for paging or resize
 func (t *TuiT) Refresh() {
 	t.refreshtop()
+	t.refreshtopbar()
 	gc.Update()
 }
 
@@ -199,18 +200,23 @@ func (t *TuiT) drawline(y int) {
 	*/
 }
 
+// refreshtopbar draws the status bar of top, but does not trigger screen update
+func (t *TuiT) refreshtopbar() {
+	t.topbar.Erase()
+	t.topbar.AttrOn(gc.A_REVERSE)
+	t.topbar.Color(1)
+	t.topbar.Print(fmt.Sprintf("%-*s", t.maxx, " "+t.topmodel.GetFilename()))
+	t.topbar.MovePrint(0, t.maxx-20, fmt.Sprintf("%d/%d", t.toptopline+t.topcursor, t.topmodel.GetNrLines()))
+	t.topbar.AttrOff(gc.A_REVERSE)
+	t.topbar.NoutRefresh()
+}
+
 // full redraw of top windows
 func (t *TuiT) refreshtop() {
 	for y := 0; y < t.toplines; y++ {
 		t.drawline(y)
 	}
 	t.top.NoutRefresh()
-
-	t.topbar.AttrOn(gc.A_REVERSE)
-	t.topbar.Print(fmt.Sprintf("%-*s", t.maxx, t.topbartext))
-	t.topbar.AttrOff(gc.A_REVERSE)
-
-	t.topbar.NoutRefresh()
 }
 
 // move cursor DOWN top window
@@ -233,6 +239,7 @@ func (t *TuiT) sdowntop() {
 	}
 	if updated {
 		t.top.NoutRefresh()
+		t.refreshtopbar()
 		gc.Update()
 	}
 }
@@ -256,6 +263,7 @@ func (t *TuiT) suptop() {
 	}
 	if updated {
 		t.top.NoutRefresh()
+		t.refreshtopbar()
 		gc.Update()
 	}
 }

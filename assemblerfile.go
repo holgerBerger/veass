@@ -76,6 +76,7 @@ func NewAssemblerFile(filename string) (*AssemblerFile, error) {
 		// process the line, search for .file and .loc and <# line nr>
 		if strline[0] == '#' {
 			if strings.Index(strline, "# line") != -1 {
+				// FIXME
 			}
 		} else {
 			// search for first non-blank character
