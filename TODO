@@ -1,0 +1,30 @@
+bugs:
+- window resize does not work
+
+features:
+
+soon:
+
+assembler
+- display of filename/currentline/total lines in status bar topbar
+- searching in assembler text/back/forward/next/previous as vi
+- more vi navigation, jump to line numbers, end of file
+
+source:
+- display source
+- change focus between source and assembler
+- navigate in source/close source view/open source view
+- jump between lines in both views
+- mark corresponding lines, and show lines in other view
+- enable navigation through marked regions (showing in statusbar the directions?)
+
+later:
+
+- syntax highlightning in source view
+- jump to labels with completion in assembler
+- reading of .L files, display of messages near source or in bottom window
+
+even later:
+
+- x86 assembler (where to get descriptions from?)
+- intel optrpt files 
