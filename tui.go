@@ -52,9 +52,10 @@ type TuiT struct {
 	middlebar  *gc.Window
 	bottom     *gc.Window
 
-	toptopline int // file coordinate, 1 in beginning, line number of first line on screen
-	toplines   int // number of lines of top panel (size, has to be updated in resize)
-	topcursor  int // screen coordinate of cursor line (0-(toplines-2))
+	toptopline int          // file coordinate, 1 in beginning, line number of first line on screen
+	toplines   int          // number of lines of top panel (size, has to be updated in resize)
+	topcursor  int          // screen coordinate of cursor line (0-(toplines-2))
+	topmarked  map[int]bool // marked lines in file coordinates (so we do not have to care of scrolling)
 
 	topmodel   PanelModel
 	topbartext string
@@ -67,6 +68,8 @@ type TuiT struct {
 func NewTui() *TuiT {
 	var newtui TuiT
 	var err error
+
+	newtui.topmarked = make(map[int]bool)
 
 	newtui.ops = NewOpstable()
 	newtui.explainre = regexp.MustCompile(`^\s+(.+?)[\[\s].+$`)
@@ -88,8 +91,8 @@ func NewTui() *TuiT {
 	}
 
 	// FIXME make those constants named
-	gc.InitPair(1, gc.C_WHITE, gc.C_BLACK)   // 1 = Black on White, normal text
-	gc.InitPair(2, gc.C_BLACK, gc.C_YELLOW)  // 2 = Black on yellow, selection
+	gc.InitPair(1, gc.C_WHITE, gc.C_BLACK)   // 1 = White on Black, normal text
+	gc.InitPair(2, gc.C_BLUE, gc.C_YELLOW)   // 2 = Blue on yellow, selection
 	gc.InitPair(3, gc.C_BLUE, gc.C_BLACK)    // 3 = Blue on black, comments
 	gc.InitPair(4, gc.C_RED, gc.C_BLACK)     // 4 = Red on black, labels
 	gc.InitPair(5, gc.C_CYAN, gc.C_BLACK)    // 5 = Green on black, directives
@@ -150,6 +153,8 @@ func NewTui() *TuiT {
 		}
 	}(c)
 
+	newtui.help()
+
 	return &newtui
 }
 
@@ -171,34 +176,23 @@ func (t *TuiT) Refresh() {
 func (t *TuiT) drawline(y int) {
 	for x := 0; x < mini(t.maxx, t.topmodel.GetLineLen(y+t.toptopline)); x++ {
 		r, color, attr := t.topmodel.GetCell(x, y+t.toptopline)
-
-		t.top.AttrOn(attr | gc.A_DIM)
+		t.top.AttrOn(attr)
 		t.top.ColorOn(color)
+		_, ok := t.topmarked[y+t.toptopline]
+		if color == 1 && ok {
+			//t.top.AttrOn(gc.A_REVERSE)
+			t.top.ColorOn(2)
+		}
 
 		if y == t.topcursor {
-			// t.top.AttrOn(gc.A_REVERSE)
 			t.top.AttrOn(gc.A_BOLD)
 		}
 		t.top.MovePrint(y, x, string(r))
-
-		t.top.AttrOff(attr | gc.A_DIM)
-		// t.top.AttrOff(gc.A_REVERSE)
+		t.top.AttrOff(attr)
 		t.top.AttrOff(gc.A_BOLD)
+		t.top.AttrOff(gc.A_REVERSE) // selection
 	}
 	t.top.ClearToEOL()
-	/* old code for inverse cursor, not needed for bold cursor
-	// draw end of line after string
-	if y == t.topcursor {
-		//t.top.AttrOn(gc.A_REVERSE)
-		t.top.AttrOn(gc.A_BOLD)
-		l := mini(t.maxx, t.topmodel.GetLineLen(y+t.toptopline))
-		t.top.MovePrint(y, l, fmt.Sprintf("%-*s", t.maxx-l, ""))
-		//t.top.AttrOff(gc.A_REVERSE)
-		t.top.AttrOff(gc.A_BOLD)
-	} else {
-		t.top.ClearToEOL()
-	}
-	*/
 }
 
 // refreshtopbar draws the status bar of top, but does not trigger screen update
@@ -375,17 +369,44 @@ func (t *TuiT) help() {
 	t.bottom.Erase()
 	t.bottom.Print(" <up>/<down>: move cursor, <pageup>/<down>: jump page wise, <home>: jump to top of file, <end>/<G>: jump to end of file")
 	t.bottom.Print(" <H>/<h>/<F1>: this help,  <q>: quit,  <enter>: explain assembler instruction, ")
-	t.bottom.Print(" <p>: position information ")
+	t.bottom.Print(" <p>: position information, <space>: select line, <backspace>: deselect line, <c>: clear selection")
 	t.bottom.NoutRefresh()
 	gc.Update()
 }
 
+// print some position info, helps in case of longmangeld c++ names which do not fit into sttaus bar
 func (t *TuiT) posinfo() {
 	t.bottom.Erase()
 	t.bottom.Println("in symbol", t.topmodel.GetSymbol(t.toptopline+t.topcursor))
 	filename, linenr := t.topmodel.GetPosition(t.toptopline + t.topcursor)
 	t.bottom.Println("produced for line", linenr, "in", filename)
 	t.bottom.NoutRefresh()
+	gc.Update()
+}
+
+// mark a single line in top
+func (t *TuiT) marktop() {
+	fileline := t.topcursor + t.toptopline
+	t.topmarked[fileline] = true
+	t.refreshtop()
+	gc.Update()
+}
+
+// unmark a line in top
+func (t *TuiT) unmarktop() {
+	fileline := t.topcursor + t.toptopline
+	_, ok := t.topmarked[fileline]
+	if ok {
+		delete(t.topmarked, fileline)
+	}
+	t.refreshtop()
+	gc.Update()
+}
+
+// clear all marked lines in top
+func (t *TuiT) clearmarktop() {
+	t.topmarked = make(map[int]bool)
+	t.refreshtop()
 	gc.Update()
 }
 
@@ -417,6 +438,12 @@ main:
 			t.help()
 		case 'p', 'P':
 			t.posinfo()
+		case ' ':
+			t.marktop()
+		case gc.KEY_BACKSPACE:
+			t.unmarktop()
+		case 'c':
+			t.clearmarktop()
 		}
 	}
 	gc.End()

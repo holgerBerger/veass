@@ -9,6 +9,7 @@ assembler
 - searching in assembler text/back/forward/next/previous as vi
 - more vi navigation, jump to line numbers, end of file
 - jump to next and previous global symbol
+- propper linebreaks in help
 
 source:
 - display source
