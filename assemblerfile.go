@@ -131,7 +131,7 @@ func NewAssemblerFile(filename string) (*AssemblerFile, error) {
 					if !ok {
 						newfile.loctable[loctuple{fileid, linenr}] = make([]int, 0, 16)
 					}
-					newfile.loctable[loctuple{fileid, linenr}] = append(newfile.loctable[loctuple{fileid, linenr}], linecount)
+					newfile.loctable[loctuple{fileid, linenr}] = append(newfile.loctable[loctuple{fileid, linenr}], cl)
 					curloc = loctuple{fileid, linenr}
 				} else if strings.Index(strline[pos:], ".file ") != -1 {
 					// collect filenames, the one without index is current file and in position 0
