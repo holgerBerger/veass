@@ -56,9 +56,15 @@ type TuiT struct {
 	toplines   int          // number of lines of top panel (size, has to be updated in resize)
 	topcursor  int          // screen coordinate of cursor line (0-(toplines-2))
 	topmarked  map[int]bool // marked lines in file coordinates (so we do not have to care of scrolling)
+	topmodel   PanelModel   // the data model for top view
 
-	topmodel   PanelModel
-	topbartext string
+	middletopline int          // file coordinate, 1 in beginning, line number of first line on screen
+	middlelines   int          // number of lines of middle panel (size, has to be updated in resize)
+	middlecursor  int          // screen coordinate of cursor line (0-(middlelines-2))
+	middlemarked  map[int]bool // marked lines in file coordinates (so we do not have to care of scrolling)
+	middlemodel   PanelModel   // the data model for middle view
+
+	bottomlines int // size of bottom window
 
 	ops       *Opstable
 	explainre *regexp.Regexp
@@ -106,39 +112,67 @@ func NewTui() *TuiT {
 
 	newtui.scr.Keypad(true)
 
-	newtui.toplines = newtui.maxy - 5 // size of bottom window, no middle
+	newtui.bottomlines = 5 // size of bottom window
+
+	newtui.middlelines = 2 // size of middle window
+
+	newtui.toplines = newtui.maxy - 1 - newtui.bottomlines - newtui.middlelines - 1
+
 	newtui.toptopline = 1
 	newtui.topcursor = 0 // cursor is in screen coordinates
-	newtui.top, err = gc.NewWindow(newtui.maxy-5, newtui.maxx, 0, 0)
+	newtui.top, err = gc.NewWindow(newtui.toplines, newtui.maxx, 0, 0)
 	if err != nil {
 		panic(err)
 	}
 	newtui.top.Keypad(true)
 
-	newtui.topbar, err = gc.NewWindow(1, newtui.maxx, newtui.maxy-5, 0)
+	newtui.topbar, err = gc.NewWindow(1, newtui.maxx, newtui.toplines, 0)
 	if err != nil {
 		panic(err)
 	}
 
-	newtui.bottom, err = gc.NewWindow(4, newtui.maxx, newtui.maxy-4, 0)
+	newtui.middletopline = 1
+	newtui.middlecursor = 0
+	newtui.middle, err = gc.NewWindow(newtui.middlelines, newtui.maxx, newtui.toplines+1, 0)
+	if err != nil {
+		panic(err)
+	}
+	newtui.middle.Keypad(true)
+
+	newtui.middlebar, err = gc.NewWindow(1, newtui.maxx, newtui.toplines+1+newtui.middlelines, 0)
+	if err != nil {
+		panic(err)
+	}
+
+	newtui.bottom, err = gc.NewWindow(newtui.bottomlines, newtui.maxx, newtui.maxy-newtui.bottomlines, 0)
 	if err != nil {
 		panic(err)
 	}
 
 	newtui.top.Color(1)
 	newtui.top.Erase()
+	newtui.middle.Color(1)
+	newtui.middle.Erase()
 	newtui.bottom.Erase()
 
 	newtui.top.ScrollOk(true)
+	newtui.middle.ScrollOk(true)
 
 	// draw empty topbar
 	newtui.topbar.AttrOn(gc.A_REVERSE)
-	newtui.topbar.Print(fmt.Sprintf("%-*s", newtui.maxx, newtui.topbartext))
+	newtui.topbar.Print(fmt.Sprintf("%-*s", newtui.maxx, ""))
 	newtui.topbar.AttrOff(gc.A_REVERSE)
+
+	// draw empty middle
+	newtui.middlebar.AttrOn(gc.A_REVERSE)
+	newtui.middlebar.Print(fmt.Sprintf("%-*s", newtui.maxx, ""))
+	newtui.middlebar.AttrOff(gc.A_REVERSE)
 
 	newtui.scr.NoutRefresh()
 	newtui.top.NoutRefresh()
 	newtui.topbar.NoutRefresh()
+	newtui.middle.NoutRefresh()
+	newtui.middlebar.NoutRefresh()
 	newtui.bottom.NoutRefresh()
 	gc.Update()
 
@@ -161,12 +195,33 @@ func NewTui() *TuiT {
 // Resize should be called on window resize
 func (t *TuiT) Resize() {
 	t.maxy, t.maxx = t.scr.MaxYX()
-	t.toplines = t.maxy - 5 // FIXME, no middle here
-	t.Refresh()
+	t.toplines = t.maxy - 1 - t.bottomlines - t.middlelines - 1
+
+	t.top.Resize(t.toplines, t.maxx)
+	t.topbar.MoveWindow(t.toplines, 0)
+
+	t.middle.Resize(t.middlelines, t.maxx)
+	t.middle.MoveWindow(t.toplines+1, 0)
+
+	t.middlebar.MoveWindow(t.toplines+1+t.middlelines, 0)
+
+	t.bottom.Resize(t.bottomlines, t.maxx)
+	t.Refreshtopall()
 }
 
-// Refresh draws everything, can be used for paging or resize
+// Refresh everything
 func (t *TuiT) Refresh() {
+	t.refreshtop()
+	t.refreshtopbar()
+	t.middle.Erase()
+	t.middle.NoutRefresh()
+	t.bottom.Erase()
+	t.bottom.NoutRefresh()
+	gc.Update()
+}
+
+// Refreshtopall draws everything, can be used for paging or resize
+func (t *TuiT) Refreshtopall() {
 	t.refreshtop()
 	t.refreshtopbar()
 	gc.Update()
@@ -270,7 +325,7 @@ func (t *TuiT) pagedowntop() {
 		t.jumpendtop()
 	} else {
 		t.toptopline = mini(t.topmodel.GetNrLines()-t.toplines+1, t.toptopline+t.toplines)
-		t.Refresh()
+		t.Refreshtopall()
 	}
 }
 
@@ -280,20 +335,20 @@ func (t *TuiT) pageuptop() {
 		t.topcursor = 0
 	}
 	t.toptopline = maxi(1, t.toptopline-t.toplines)
-	t.Refresh()
+	t.Refreshtopall()
 }
 
 func (t *TuiT) jumphometop() {
 	t.toptopline = 1
 	t.topcursor = 0
-	t.Refresh()
+	t.Refreshtopall()
 }
 
 func (t *TuiT) jumpendtop() {
 	t.top.Erase()
 	t.toptopline = maxi(1, t.topmodel.GetNrLines()-t.toplines+2)
 	t.topcursor = mini(t.topmodel.GetNrLines()-t.toptopline, t.toplines)
-	t.Refresh()
+	t.Refreshtopall()
 }
 
 // explain an assembly instruction
@@ -444,7 +499,7 @@ func (t *TuiT) clearmarktop() {
 
 // Run is the UI main event loop
 func (t *TuiT) Run() {
-	t.Refresh()
+	t.Refreshtopall()
 main:
 	for {
 		switch t.top.GetChar() {
@@ -479,13 +534,19 @@ main:
 			t.clearmarktop()
 		case 'm':
 			t.markalltop()
-			//		case 'v':
-			//			t.viewsource()
+		case 'V':
+			t.middlelines = 0
+			t.Resize()
+			t.Refresh()
+		case 'v':
+			t.middlelines = 10
+			t.Resize()
+			t.Refresh()
 		case 'R', 'r':
 			// FIXME does not work!??!
 			t.bottom.Erase()
 			t.bottom.Refresh()
-			t.Refresh()
+			t.Refreshtopall()
 		}
 	}
 	gc.End()
