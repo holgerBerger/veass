@@ -7,7 +7,8 @@ soon:
 
 assembler
 - searching in assembler text/back/forward/next/previous as vi
-- more vi navigation, jump to line numbers, end of file
+- show in which direction there is markers/jump to marked blocks
+- more vi navigation, jump to line number
 - jump to next and previous global symbol
 - propper linebreaks in help
 

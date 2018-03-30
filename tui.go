@@ -367,9 +367,10 @@ func (t *TuiT) explain() {
 // help prints keyboard help
 func (t *TuiT) help() {
 	t.bottom.Erase()
-	t.bottom.Print(" <up>/<down>: move cursor, <pageup>/<down>: jump page wise, <home>: jump to top of file, <end>/<G>: jump to end of file")
-	t.bottom.Print(" <H>/<h>/<F1>: this help,  <q>: quit,  <enter>: explain assembler instruction, ")
-	t.bottom.Print(" <p>: position information, <space>: select line, <backspace>: deselect line, <c>: clear selection")
+	t.bottom.Print("<home>: jump to top of file, <end>/<G>: jump to end of file")
+	t.bottom.Print("<H>/<h>/<F1>: help,  <q>: quit,  <enter>: explain instruction, ")
+	t.bottom.Print("<p>: pos. info., <space>/<backspace>: select/deselect line, <c>: clear selection, <m> select lines from same sourceline")
+	t.bottom.Print("<v>: view sourceline")
 	t.bottom.NoutRefresh()
 	gc.Update()
 }
@@ -403,9 +404,11 @@ func (t *TuiT) markalltop() {
 			break
 		}
 	}
+	// file 0 and file 1 are same in case of -g, loc contains 1,X
 	if fileid == 0 && assemblerfile.filenametable[1] == filename {
 		fileid = 1
 	}
+	// we use loctable to quickly jump to .loc lines and search from there
 	for _, l := range assemblerfile.loctable[loctuple{fileid, line}] {
 		s := l
 		for s < t.topmodel.GetNrLines() {
@@ -417,7 +420,6 @@ func (t *TuiT) markalltop() {
 			s++
 		}
 	}
-
 	t.refreshtop()
 	gc.Update()
 }
@@ -477,6 +479,8 @@ main:
 			t.clearmarktop()
 		case 'm':
 			t.markalltop()
+			//		case 'v':
+			//			t.viewsource()
 		case 'R', 'r':
 			// FIXME does not work!??!
 			t.bottom.Erase()
