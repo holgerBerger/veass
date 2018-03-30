@@ -28,6 +28,7 @@ package main
 	ncurses is very hard coded here, tcell was to slow
 	for remote usage
 
+	(c) Holger Berger 2018
 */
 
 import (

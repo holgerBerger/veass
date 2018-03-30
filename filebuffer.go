@@ -1,10 +1,5 @@
 package main
 
-import (
-	"bytes"
-	"fmt"
-)
-
 /*
 
 	data structire to store a file line by line
@@ -15,7 +10,13 @@ import (
 	space efficient.
 	it is a "insert once and read often but never update" format.
 
+	(c) Holger Berger 2018
 */
+
+import (
+	"bytes"
+	"fmt"
+)
 
 const lineblocksize = 1024 // number of lines in one block
 const initialblocks = 1024 // initial number of slots for lineblocks

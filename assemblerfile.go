@@ -19,6 +19,7 @@ package main
   .file idx "path"
   .loc idx line column
 
+	(c) Holger Berger 2018
 */
 
 import (

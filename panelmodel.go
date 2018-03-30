@@ -1,5 +1,7 @@
 package main
 
+// 	(c) Holger Berger 2018
+
 import "github.com/rthornton128/goncurses"
 
 // PanelModel is the interface a view uses to get data from underlying data model

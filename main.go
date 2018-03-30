@@ -6,6 +6,7 @@ package main
 	read assembly file
 	start gui
 
+	(c) Holger Berger 2018
 */
 
 import (

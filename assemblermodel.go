@@ -6,6 +6,8 @@ package main
 	this model decides how a line appears on screen, character by characters
 	it will be called for each screen coordinate (valid in text coordinates and in text coordinate)
 	to deliver characters from top left to lover right
+
+		(c) Holger Berger 2018
 */
 
 import (

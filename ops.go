@@ -1,5 +1,7 @@
 package main
 
+// 	(c) Holger Berger 2018
+
 import (
 	"regexp"
 	"strings"
