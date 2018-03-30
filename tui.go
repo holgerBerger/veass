@@ -392,6 +392,36 @@ func (t *TuiT) marktop() {
 	gc.Update()
 }
 
+// mark all lines which result from same source line as marked line
+func (t *TuiT) markalltop() {
+	fileline := t.topcursor + t.toptopline
+	filename, line := t.topmodel.GetPosition(fileline)
+	var fileid int
+	for id, name := range assemblerfile.filenametable {
+		if name == filename {
+			fileid = id
+			break
+		}
+	}
+	if fileid == 0 && assemblerfile.filenametable[1] == filename {
+		fileid = 1
+	}
+	for _, l := range assemblerfile.loctable[loctuple{fileid, line}] {
+		s := l
+		for s < t.topmodel.GetNrLines() {
+			cf, cl := t.topmodel.GetPosition(s)
+			if cf != filename || cl != line {
+				break
+			}
+			t.topmarked[s] = true
+			s++
+		}
+	}
+
+	t.refreshtop()
+	gc.Update()
+}
+
 // unmark a line in top
 func (t *TuiT) unmarktop() {
 	fileline := t.topcursor + t.toptopline
@@ -431,6 +461,7 @@ main:
 		case gc.KEY_END, 'G':
 			t.jumpendtop()
 		case gc.KEY_RESIZE:
+			// FIXME does not work
 			t.bottom.Println("resize!")
 		case gc.KEY_RETURN:
 			t.explain()
@@ -444,6 +475,13 @@ main:
 			t.unmarktop()
 		case 'c':
 			t.clearmarktop()
+		case 'm':
+			t.markalltop()
+		case 'R', 'r':
+			// FIXME does not work!??!
+			t.bottom.Erase()
+			t.bottom.Refresh()
+			t.Refresh()
 		}
 	}
 	gc.End()

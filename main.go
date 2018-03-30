@@ -26,10 +26,11 @@ var opts struct {
 	Sourcedirs string `long:"sourcedirs" short:"s" description:"comma seperated list of directories to search for source files"`
 }
 
+var assemblerfile *AssemblerFile
+
 func main() {
 	var (
-		assemblerfile *AssemblerFile
-		err           error
+		err error
 	)
 
 	args, err := flags.Parse(&opts)
