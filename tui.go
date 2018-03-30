@@ -165,7 +165,7 @@ func NewTui() *TuiT {
 
 	// draw empty middle
 	newtui.middlebar.AttrOn(gc.A_REVERSE)
-	newtui.middlebar.Print(fmt.Sprintf("%-*s", newtui.maxx, ""))
+	newtui.middlebar.Print(fmt.Sprintf("%-*s", newtui.maxx, "<no source>"))
 	newtui.middlebar.AttrOff(gc.A_REVERSE)
 
 	newtui.scr.NoutRefresh()
@@ -211,13 +211,16 @@ func (t *TuiT) Resize() {
 
 // Refresh everything
 func (t *TuiT) Refresh() {
-	t.refreshtop()
-	t.refreshtopbar()
+
 	t.middle.Erase()
 	t.middle.NoutRefresh()
+	// FIXME do some real redraw here
+	t.middlebar.AttrOn(gc.A_REVERSE)
+	t.middlebar.Print(fmt.Sprintf("%-*s", t.maxx, "<no source>"))
+	t.middlebar.AttrOff(gc.A_REVERSE)
 	t.bottom.Erase()
 	t.bottom.NoutRefresh()
-	gc.Update()
+	t.Refreshtopall()
 }
 
 // Refreshtopall draws everything, can be used for paging or resize
@@ -425,7 +428,7 @@ func (t *TuiT) help() {
 	t.bottom.Print("<home>: jump to top of file, <end>/<G>: jump to end of file")
 	t.bottom.Print("<H>/<h>/<F1>: help,  <q>: quit,  <enter>: explain instruction, ")
 	t.bottom.Print("<p>: pos. info., <space>/<backspace>: select/deselect line, <c>: clear selection, <m> select lines from same sourceline")
-	t.bottom.Print("<v>: view sourceline")
+	t.bottom.Print("<v>: view sourcefile")
 	t.bottom.NoutRefresh()
 	gc.Update()
 }
