@@ -27,6 +27,7 @@ var opts struct {
 }
 
 var assemblerfile *AssemblerFile
+var sourcefile *Sourcefile
 
 func main() {
 	var (

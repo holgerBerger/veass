@@ -141,11 +141,9 @@ func NewAssemblerFile(filename string) (*AssemblerFile, error) {
 					// collect filenames, the one without index is current file and in position 0
 					flds := strings.Fields(strline[pos:])
 					if len(flds) > 2 {
-						newfile.filenametable = append(newfile.filenametable, flds[2][1:len(flds[2])-1])
-						expandfilename(flds[2][1 : len(flds[2])-1])
+						newfile.filenametable = append(newfile.filenametable, expandfilename(flds[2][1:len(flds[2])-1]))
 					} else {
-						newfile.filenametable = append(newfile.filenametable, flds[1][1:len(flds[1])-1])
-						expandfilename(flds[1][1 : len(flds[1])-1])
+						newfile.filenametable = append(newfile.filenametable, expandfilename(flds[1][1:len(flds[1])-1]))
 					}
 				} else if strings.Index(strline[pos:], ".globl ") != -1 {
 					cursymbol = strings.Join(strings.Fields(strline[pos:])[1:], " ")
@@ -155,7 +153,7 @@ func NewAssemblerFile(filename string) (*AssemblerFile, error) {
 		newfile.index[cl] = indextuple{curloc, cursymbol}
 	} // loop process lines
 
-	close(ifile)
+	ifile.Close()
 	return &newfile, nil
 }
 

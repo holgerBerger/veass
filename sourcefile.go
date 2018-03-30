@@ -6,6 +6,11 @@ package main
 	(c) Holger Berger 2018
 */
 
+import (
+	"bufio"
+	"os"
+)
+
 type Sourcefile struct {
 	filebuffer *FileBuffer
 }
@@ -42,6 +47,6 @@ func NewSourceFile(filename string) (*Sourcefile, error) {
 		// now we are done, push up linenumber
 		linecount++
 	}
-	close(ifile)
+	ifile.Close()
 	return &newfile, nil
 }

@@ -114,7 +114,7 @@ func NewTui() *TuiT {
 
 	newtui.bottomlines = 5 // size of bottom window
 
-	newtui.middlelines = 2 // size of middle window
+	newtui.middlelines = 0 // size of middle window
 
 	newtui.toplines = newtui.maxy - 1 - newtui.bottomlines - newtui.middlelines - 1
 
@@ -165,7 +165,7 @@ func NewTui() *TuiT {
 
 	// draw empty middle
 	newtui.middlebar.AttrOn(gc.A_REVERSE)
-	newtui.middlebar.Print(fmt.Sprintf("%-*s", newtui.maxx, "<no source>"))
+	newtui.middlebar.Print(fmt.Sprintf("%-*s", newtui.maxx, " <no source>"))
 	newtui.middlebar.AttrOff(gc.A_REVERSE)
 
 	newtui.scr.NoutRefresh()
@@ -212,12 +212,13 @@ func (t *TuiT) Resize() {
 // Refresh everything
 func (t *TuiT) Refresh() {
 
-	t.middle.Erase()
 	t.middle.NoutRefresh()
+
 	// FIXME do some real redraw here
 	t.middlebar.AttrOn(gc.A_REVERSE)
-	t.middlebar.Print(fmt.Sprintf("%-*s", t.maxx, "<no source>"))
+	t.middlebar.Print(fmt.Sprintf("%-*s", t.maxx, " <no source>"))
 	t.middlebar.AttrOff(gc.A_REVERSE)
+
 	t.bottom.Erase()
 	t.bottom.NoutRefresh()
 	t.Refreshtopall()
@@ -230,15 +231,14 @@ func (t *TuiT) Refreshtopall() {
 	gc.Update()
 }
 
-// drawline, y in screen coordinates
-func (t *TuiT) drawline(y int) {
+// drawlinetop, y in screen coordinates
+func (t *TuiT) drawlinetop(y int) {
 	for x := 0; x < mini(t.maxx, t.topmodel.GetLineLen(y+t.toptopline)); x++ {
 		r, color, attr := t.topmodel.GetCell(x, y+t.toptopline)
 		t.top.AttrOn(attr)
 		t.top.ColorOn(color)
 		_, ok := t.topmarked[y+t.toptopline]
 		if color == 1 && ok {
-			//t.top.AttrOn(gc.A_REVERSE)
 			t.top.ColorOn(2)
 		}
 
@@ -251,6 +251,28 @@ func (t *TuiT) drawline(y int) {
 		t.top.AttrOff(gc.A_REVERSE) // selection
 	}
 	t.top.ClearToEOL()
+}
+
+// drawlinemiddle, y in screen coordinates
+func (t *TuiT) drawlinemiddle(y int) {
+	for x := 0; x < mini(t.maxx, t.middlemodel.GetLineLen(y+t.middletopline)); x++ {
+		r, color, attr := t.middlemodel.GetCell(x, y+t.middletopline)
+		t.middle.AttrOn(attr)
+		t.middle.ColorOn(color)
+		_, ok := t.middlemarked[y+t.middletopline]
+		if color == 1 && ok {
+			t.middle.ColorOn(2)
+		}
+
+		if y == t.middlecursor {
+			t.middle.AttrOn(gc.A_BOLD)
+		}
+		t.middle.MovePrint(y, x, string(r))
+		t.middle.AttrOff(attr)
+		t.middle.AttrOff(gc.A_BOLD)
+		t.middle.AttrOff(gc.A_REVERSE) // selection
+	}
+	t.middle.ClearToEOL()
 }
 
 // refreshtopbar draws the status bar of top, but does not trigger screen update
@@ -267,9 +289,17 @@ func (t *TuiT) refreshtopbar() {
 // full redraw of top windows
 func (t *TuiT) refreshtop() {
 	for y := 0; y < t.toplines; y++ {
-		t.drawline(y)
+		t.drawlinetop(y)
 	}
 	t.top.NoutRefresh()
+}
+
+// full redraw of middle windows
+func (t *TuiT) refreshmiddle() {
+	for y := 0; y < t.middlelines; y++ {
+		t.drawlinemiddle(y)
+	}
+	t.middle.NoutRefresh()
 }
 
 // move cursor DOWN top window
@@ -277,16 +307,16 @@ func (t *TuiT) sdowntop() {
 	updated := false
 	if t.topcursor < t.toplines-2 && t.topcursor < t.topmodel.GetNrLines()-1 {
 		t.topcursor++
-		t.drawline(t.topcursor - 1)
-		t.drawline(t.topcursor)
+		t.drawlinetop(t.topcursor - 1)
+		t.drawlinetop(t.topcursor)
 		updated = true
 	} else {
 		if t.toptopline+t.toplines < t.topmodel.GetNrLines()+2 {
 			t.top.Scroll(1)
 			t.toptopline++
-			t.drawline(t.toplines - 1) // new line
-			t.drawline(t.toplines - 2) // new cursor line
-			t.drawline(t.toplines - 3) // old cursor line
+			t.drawlinetop(t.toplines - 1) // new line
+			t.drawlinetop(t.toplines - 2) // new cursor line
+			t.drawlinetop(t.toplines - 3) // old cursor line
 			updated = true
 		}
 	}
@@ -302,15 +332,15 @@ func (t *TuiT) suptop() {
 	updated := false
 	if t.topcursor > 0 {
 		t.topcursor--
-		t.drawline(t.topcursor + 1)
-		t.drawline(t.topcursor)
+		t.drawlinetop(t.topcursor + 1)
+		t.drawlinetop(t.topcursor)
 		updated = true
 	} else {
 		if t.toptopline > 1 {
 			t.toptopline--
 			t.top.Scroll(-1)
-			t.drawline(0)
-			t.drawline(1)
+			t.drawlinetop(0)
+			t.drawlinetop(1)
 			updated = true
 		}
 	}
@@ -500,6 +530,24 @@ func (t *TuiT) clearmarktop() {
 	gc.Update()
 }
 
+func (t *TuiT) opensourcefile() bool {
+	var err error
+	filename, _ := t.topmodel.GetPosition(t.toptopline + t.topcursor)
+	sourcefile, err = NewSourceFile(filename)
+	if err != nil {
+		t.bottom.Erase()
+		t.bottom.Println("could not open sourcefile", filename)
+		t.bottom.NoutRefresh()
+		gc.Update()
+		return false
+	}
+	t.middlelines = t.toplines / 2
+	t.Resize()
+	t.middlemodel = NewSourceModel(sourcefile)
+	t.refreshmiddle()
+	return true
+}
+
 // Run is the UI main event loop
 func (t *TuiT) Run() {
 	t.Refreshtopall()
@@ -542,9 +590,10 @@ main:
 			t.Resize()
 			t.Refresh()
 		case 'v':
-			t.middlelines = 10
-			t.Resize()
-			t.Refresh()
+			if t.opensourcefile() {
+				t.Resize()
+				t.Refresh()
+			}
 		case 'R', 'r':
 			// FIXME does not work!??!
 			t.bottom.Erase()

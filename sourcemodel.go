@@ -11,14 +11,12 @@ package main
 */
 
 import (
-	"regexp"
-
 	"github.com/rthornton128/goncurses"
 )
 
 // SourceModel implements PanelModel to allow a viewer to get characters and attributes of certain coordinates in file
 type SourceModel struct {
-	sourcefile *SourceFile // reference to prepared data
+	sourcefile *Sourcefile // reference to prepared data
 	file       *FileBuffer // reference to underleying data
 	lastline   string      // caching: buffer last line
 	lastlinenr int         // caching: buffer number of last line
@@ -26,7 +24,7 @@ type SourceModel struct {
 }
 
 // NewSourceModel creates a model for the view into an sourcefile
-func NewSourceModel(sourcefile *SourceFile) *SourceModel {
+func NewSourceModel(sourcefile *Sourcefile) *SourceModel {
 	var na SourceModel
 	na.sourcefile = sourcefile
 	na.file = sourcefile.filebuffer
