@@ -5,7 +5,7 @@ package main
   read an assembler file into a buffer
   as we want to be fast and are not (yet) interested in details
   and want to safe memory as well, we only store the associated
-  source lines with it.
+  source lines with it, and store fileid/sourceline for each line.
 
   as we want to be able to jump from assembler to source and
   from source to assembler, we store an index to find
@@ -155,6 +155,7 @@ func NewAssemblerFile(filename string) (*AssemblerFile, error) {
 		newfile.index[cl] = indextuple{curloc, cursymbol}
 	} // loop process lines
 
+	close(ifile)
 	return &newfile, nil
 }
 

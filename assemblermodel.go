@@ -1,9 +1,9 @@
 package main
 
 /*
-	the AssemblerModel iumplements a model part of a view/,podel architecture
+	the AssemblerModel implements a model part of a view/model architecture
 	it delivers character + attributes to caller
-	this model decides how a line appears on screen, character by characters
+	this model decides how a line appears on screen, character by character
 	it will be called for each screen coordinate (valid in text coordinates and in text coordinate)
 	to deliver characters from top left to lover right
 
@@ -100,7 +100,7 @@ func (a AssemblerModel) GetFilename() string {
 	return a.file.name
 }
 
-// GetSymbol returns the global symbol precedding a line
+// GetSymbol returns the global symbol preceeding a line
 func (a AssemblerModel) GetSymbol(line int) string {
 	return a.assemblerfile.index[line].symbol
 }
