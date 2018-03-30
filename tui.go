@@ -463,7 +463,7 @@ func (t *TuiT) markalltop() {
 		}
 	}
 	// file 0 and file 1 are same in case of -g, loc contains 1,X
-	if fileid == 0 && assemblerfile.filenametable[1] == filename {
+	if fileid == 0 && len(assemblerfile.filenametable) > 1 && assemblerfile.filenametable[1] == filename {
 		fileid = 1
 	}
 	// we use loctable to quickly jump to .loc lines and search from there

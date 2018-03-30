@@ -68,7 +68,6 @@ func NewAssemblerFile(filename string) (*AssemblerFile, error) {
 
 	reader := bufio.NewReaderSize(ifile, 1024*1024) // get a nice buffer
 
-	// FIXME why is this so slow?
 	fmt.Print("Reading file...")
 	linecount := 1
 	for {
@@ -106,6 +105,11 @@ func NewAssemblerFile(filename string) (*AssemblerFile, error) {
 				if err != nil {
 					panic(err)
 				}
+				_, ok := newfile.loctable[loctuple{0, linenr}]
+				if !ok {
+					newfile.loctable[loctuple{0, linenr}] = make([]int, 0, 16)
+				}
+				newfile.loctable[loctuple{0, linenr}] = append(newfile.loctable[loctuple{0, linenr}], cl)
 				curloc = loctuple{0, linenr}
 			}
 		} else {
