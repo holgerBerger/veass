@@ -52,6 +52,8 @@ type TuiT struct {
 	middlebar  *gc.Window
 	bottom     *gc.Window
 
+	focus int // 0=top 1=middle
+
 	toptopline int          // file coordinate, 1 in beginning, line number of first line on screen
 	toplines   int          // number of lines of top panel (size, has to be updated in resize)
 	topcursor  int          // screen coordinate of cursor line (0-(toplines-2))
@@ -75,6 +77,7 @@ func NewTui() *TuiT {
 	var newtui TuiT
 	var err error
 
+	newtui.focus = 0
 	newtui.topmarked = make(map[int]bool)
 
 	newtui.ops = NewOpstable()
@@ -231,6 +234,13 @@ func (t *TuiT) Refreshtopall() {
 	gc.Update()
 }
 
+// Refreshmiddleall draws everything, can be used for paging or resize
+func (t *TuiT) Refreshmiddleall() {
+	t.refreshmiddle()
+	// FIXME t.refreshmiddlebar()
+	gc.Update()
+}
+
 // drawlinetop, y in screen coordinates
 func (t *TuiT) drawlinetop(y int) {
 	for x := 0; x < mini(t.maxx, t.topmodel.GetLineLen(y+t.toptopline)); x++ {
@@ -351,6 +361,55 @@ func (t *TuiT) suptop() {
 	}
 }
 
+// move cursor DOWN middle window
+func (t *TuiT) sdownmiddle() {
+	updated := false
+	if t.middlecursor < t.middlelines-2 && t.middlecursor < t.middlemodel.GetNrLines()-1 {
+		t.middlecursor++
+		t.drawlinemiddle(t.middlecursor - 1)
+		t.drawlinemiddle(t.middlecursor)
+		updated = true
+	} else {
+		if t.middletopline+t.middlelines < t.middlemodel.GetNrLines()+2 {
+			t.middle.Scroll(1)
+			t.middletopline++
+			t.drawlinemiddle(t.middlelines - 1) // new line
+			t.drawlinemiddle(t.middlelines - 2) // new cursor line
+			t.drawlinemiddle(t.middlelines - 3) // old cursor line
+			updated = true
+		}
+	}
+	if updated {
+		t.middle.NoutRefresh()
+		// FIXME t.refreshmiddlebar()
+		gc.Update()
+	}
+}
+
+// move cursor UP middle window
+func (t *TuiT) supmiddle() {
+	updated := false
+	if t.middlecursor > 0 {
+		t.middlecursor--
+		t.drawlinemiddle(t.middlecursor + 1)
+		t.drawlinemiddle(t.middlecursor)
+		updated = true
+	} else {
+		if t.middletopline > 1 {
+			t.middletopline--
+			t.middle.Scroll(-1)
+			t.drawlinemiddle(0)
+			t.drawlinemiddle(1)
+			updated = true
+		}
+	}
+	if updated {
+		t.middle.NoutRefresh()
+		// FIXME t.refreshmiddlebar()
+		gc.Update()
+	}
+}
+
 // page down top window
 func (t *TuiT) pagedowntop() {
 	if t.toptopline+t.toplines > t.topmodel.GetNrLines() {
@@ -371,6 +430,26 @@ func (t *TuiT) pageuptop() {
 	t.Refreshtopall()
 }
 
+// page down middle window
+func (t *TuiT) pagedownmiddle() {
+	if t.middletopline+t.middlelines > t.middlemodel.GetNrLines() {
+		// this means all file is on screen, lets move cursor to end of files
+		t.jumpendmiddle()
+	} else {
+		t.middletopline = mini(t.middlemodel.GetNrLines()-t.middlelines+1, t.middletopline+t.middlelines)
+		t.Refreshmiddleall()
+	}
+}
+
+// page up middle window
+func (t *TuiT) pageupmiddle() {
+	if t.middletopline == 1 {
+		t.middlecursor = 0
+	}
+	t.middletopline = maxi(1, t.middletopline-t.middlelines)
+	t.Refreshmiddleall()
+}
+
 func (t *TuiT) jumphometop() {
 	t.toptopline = 1
 	t.topcursor = 0
@@ -382,6 +461,19 @@ func (t *TuiT) jumpendtop() {
 	t.toptopline = maxi(1, t.topmodel.GetNrLines()-t.toplines+2)
 	t.topcursor = mini(t.topmodel.GetNrLines()-t.toptopline, t.toplines)
 	t.Refreshtopall()
+}
+
+func (t *TuiT) jumphomemiddle() {
+	t.middletopline = 1
+	t.middlecursor = 0
+	t.Refreshmiddleall()
+}
+
+func (t *TuiT) jumpendmiddle() {
+	t.middle.Erase()
+	t.middletopline = maxi(1, t.middlemodel.GetNrLines()-t.middlelines+2)
+	t.middlecursor = mini(t.middlemodel.GetNrLines()-t.middletopline, t.middlelines)
+	t.Refreshmiddleall()
 }
 
 // explain an assembly instruction
@@ -458,7 +550,7 @@ func (t *TuiT) help() {
 	t.bottom.Print("<home>: jump to top of file, <end>/<G>: jump to end of file")
 	t.bottom.Print("<H>/<h>/<F1>: help,  <q>: quit,  <enter>: explain instruction, ")
 	t.bottom.Print("<p>: pos. info., <space>/<backspace>: select/deselect line, <c>: clear selection, <m> select lines from same sourceline")
-	t.bottom.Print("<v>: view sourcefile")
+	t.bottom.Print("<v>: view sourcefile, <TAB>: change focus")
 	t.bottom.NoutRefresh()
 	gc.Update()
 }
@@ -556,21 +648,51 @@ main:
 		switch t.top.GetChar() {
 		case 'q', 'Q':
 			break main
-		case gc.KEY_DOWN:
-			t.sdowntop()
-		case gc.KEY_UP:
-			t.suptop()
+		case gc.KEY_DOWN, 'j':
+			if t.focus == 0 {
+				t.sdowntop()
+			} else {
+				t.sdownmiddle()
+			}
+		case gc.KEY_UP, 'k':
+			if t.focus == 0 {
+				t.suptop()
+			} else {
+				t.supmiddle()
+			}
 		case gc.KEY_PAGEDOWN:
-			t.pagedowntop()
+			if t.focus == 0 {
+				t.pagedowntop()
+			} else {
+				t.pagedownmiddle()
+			}
 		case gc.KEY_PAGEUP:
-			t.pageuptop()
+			if t.focus == 0 {
+				t.pageuptop()
+			} else {
+				t.pageupmiddle()
+			}
 		case gc.KEY_HOME:
-			t.jumphometop()
+			if t.focus == 0 {
+				t.jumphometop()
+			} else {
+				t.jumphomemiddle()
+			}
 		case gc.KEY_END, 'G':
-			t.jumpendtop()
+			if t.focus == 0 {
+				t.jumpendtop()
+			} else {
+				t.jumpendmiddle()
+			}
 		case gc.KEY_RESIZE:
 			// FIXME does not work
 			t.bottom.Println("resize!")
+		case gc.KEY_TAB:
+			if t.focus == 0 && t.middlelines > 0 {
+				t.focus = 1
+			} else {
+				t.focus = 0
+			}
 		case gc.KEY_RETURN:
 			t.explain()
 		case 'h', 'H', gc.KEY_F1:
@@ -586,6 +708,7 @@ main:
 		case 'm':
 			t.markalltop()
 		case 'V':
+			t.focus = 0
 			t.middlelines = 0
 			t.Resize()
 			t.Refresh()
@@ -599,6 +722,7 @@ main:
 			t.bottom.Erase()
 			t.bottom.Refresh()
 			t.Refreshtopall()
+			t.Refreshmiddleall()
 		}
 	}
 	gc.End()
