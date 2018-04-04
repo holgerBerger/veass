@@ -13,9 +13,6 @@ assembler
 - propper linebreaks in help
 
 source:
-- display source
-- change focus between source and assembler
-- navigate in source/close source view/open source view
 - jump between lines in both views
 - mark corresponding lines, and show lines in other view
 - enable navigation through marked regions (showing in statusbar the directions?)

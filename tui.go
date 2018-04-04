@@ -79,6 +79,7 @@ func NewTui() *TuiT {
 
 	newtui.focus = 0
 	newtui.topmarked = make(map[int]bool)
+	newtui.middlemarked = make(map[int]bool)
 
 	newtui.ops = NewOpstable()
 	newtui.explainre = regexp.MustCompile(`^\s+(.+?)[\[\s].+$`)
@@ -504,6 +505,22 @@ func (t *TuiT) jumpendmiddle() {
 	t.Refreshmiddleall()
 }
 
+func (t *TuiT) showlinetop(line int) {
+	if line <= t.topmodel.GetNrLines() {
+		t.toptopline = line
+		t.topcursor = 0
+		t.Refreshtopall()
+	}
+}
+
+func (t *TuiT) showlinemiddle(line int) {
+	if line <= t.middlemodel.GetNrLines() {
+		t.middletopline = line
+		t.middlecursor = 0
+		t.Refreshmiddleall()
+	}
+}
+
 // explain an assembly instruction
 func (t *TuiT) explain() {
 	line := t.topmodel.GetLine(t.toptopline + t.topcursor)
@@ -632,6 +649,43 @@ func (t *TuiT) markalltop() {
 	gc.Update()
 }
 
+func (t *TuiT) showass() {
+	filename := t.middlemodel.GetFilename()
+	line := t.middletopline + t.middlecursor
+	var fileid int
+	for id, name := range assemblerfile.filenametable {
+		if name == filename || strings.Index(filename, "/"+name) > 0 {
+			fileid = id
+			break
+		}
+	}
+	// file 0 and file 1 are same in case of -g, loc contains 1,X
+	if fileid == 0 && len(assemblerfile.filenametable) > 1 && assemblerfile.filenametable[1] == filename {
+		fileid = 1
+	}
+	firstline := -1
+	// we use loctable to quickly jump to .loc lines and search from there
+	for _, l := range assemblerfile.loctable[loctuple{fileid, line}] {
+		s := l
+		for s < t.topmodel.GetNrLines() {
+			cf, cl := t.topmodel.GetPosition(s)
+			if cf != filename || cl != line {
+				break
+			}
+			t.topmarked[s] = true
+			if firstline == -1 {
+				firstline = s
+			}
+			s++
+		}
+	}
+	if firstline != -1 {
+		t.showlinetop(firstline)
+	}
+	t.refreshtop()
+	gc.Update()
+}
+
 // unmark a line in top
 func (t *TuiT) unmarktop() {
 	fileline := t.topcursor + t.toptopline
@@ -647,6 +701,13 @@ func (t *TuiT) unmarktop() {
 func (t *TuiT) clearmarktop() {
 	t.topmarked = make(map[int]bool)
 	t.refreshtop()
+	gc.Update()
+}
+
+// clear all marked lines in middle
+func (t *TuiT) clearmarkmiddle() {
+	t.middlemarked = make(map[int]bool)
+	t.refreshmiddle()
 	gc.Update()
 }
 
@@ -724,7 +785,22 @@ main:
 			t.Refreshtopall()
 			t.Refreshmiddleall()
 		case gc.KEY_RETURN:
-			t.explain()
+			if t.focus == 0 {
+				if t.middlelines > 0 {
+					_, line := t.topmodel.GetPosition(t.toptopline + t.topcursor)
+					t.middlemarked[line] = true
+					t.showlinemiddle(line)
+				}
+				t.explain()
+			} else {
+				if t.middlelines > 0 {
+					_, line := t.middlemodel.GetPosition(t.middletopline + t.middlecursor)
+					t.middlemarked[line] = true
+					t.Refreshtopall()
+					gc.Update()
+				}
+				t.showass()
+			}
 		case 'h', 'H', gc.KEY_F1:
 			t.help()
 		case 'p', 'P':
@@ -735,6 +811,7 @@ main:
 			t.unmarktop()
 		case 'c':
 			t.clearmarktop()
+			t.clearmarkmiddle()
 		case 'm':
 			t.markalltop()
 		case 'V':
@@ -745,6 +822,9 @@ main:
 		case 'v':
 			if t.opensourcefile() {
 				t.Resize()
+				_, line := t.topmodel.GetPosition(t.toptopline + t.topcursor)
+				t.middlemarked[line] = true
+				t.showlinemiddle(line)
 				t.refreshmiddlebar()
 				t.Refresh()
 			}
