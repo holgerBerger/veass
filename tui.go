@@ -12,7 +12,8 @@ package main
 	|														|
 	|														|
 	=topbar======================
-	|middle (optional)					|
+	|middle
+	(optional)					|
 	|														|
 	=middlebar===================
 	|bottom											|
@@ -787,18 +788,27 @@ main:
 		case gc.KEY_RETURN:
 			if t.focus == 0 {
 				if t.middlelines > 0 {
-					_, line := t.topmodel.GetPosition(t.toptopline + t.topcursor)
-					t.middlemarked[line] = true
-					t.showlinemiddle(line)
+					filename, line := t.topmodel.GetPosition(t.toptopline + t.topcursor)
+					if filename == t.middlemodel.GetFilename() {
+						t.middlemarked[line] = true
+						t.showlinemiddle(line)
+					} else {
+						t.bottom.Erase()
+						t.bottom.Println("wrong file loaded, use <v> to load file.")
+						t.bottom.NoutRefresh()
+						gc.Update()
+					}
 				}
 				t.explain()
 			} else {
-				if t.middlelines > 0 {
-					_, line := t.middlemodel.GetPosition(t.middletopline + t.middlecursor)
-					t.middlemarked[line] = true
-					t.Refreshtopall()
-					gc.Update()
-				}
+				/*
+					if t.middlelines > 0 {
+						_, line := t.middlemodel.GetPosition(t.middletopline + t.middlecursor)
+						t.middlemarked[line] = true
+						t.Refreshtopall()
+						gc.Update()
+					}
+				*/
 				t.showass()
 			}
 		case 'h', 'H', gc.KEY_F1:
@@ -823,8 +833,10 @@ main:
 			if t.opensourcefile() {
 				t.Resize()
 				_, line := t.topmodel.GetPosition(t.toptopline + t.topcursor)
-				t.middlemarked[line] = true
-				t.showlinemiddle(line)
+				if line > 0 {
+					t.middlemarked[line] = true
+					t.showlinemiddle(line)
+				}
 				t.refreshmiddlebar()
 				t.Refresh()
 			}
