@@ -593,10 +593,11 @@ func (t *TuiT) explain() {
 // help prints keyboard help
 func (t *TuiT) help() {
 	t.bottom.Erase()
-	t.bottom.Print("<home>: jump to top of file, <end>/<G>: jump to end of file")
+	t.bottom.Print("<home>: jump to top of file, <end>/<G>: jump to end of file, ")
 	t.bottom.Print("<H>/<h>/<F1>: help,  <q>: quit,  <enter>: explain instruction, ")
-	t.bottom.Print("<p>: pos. info., <space>/<backspace>: select/deselect line, <c>: clear selection, <m> select lines from same sourceline")
-	t.bottom.Print("<v>: view sourcefile, <TAB>: change focus")
+	t.bottom.Print("<p>: position info., <c>: clear selection, <m> select lines from same sourceline, ")
+	//	<space>/<backspace>: select/deselect line,
+	t.bottom.Print("<v>: view sourcefile, <V> close sourcefile, <TAB>: change focus")
 	t.bottom.NoutRefresh()
 	gc.Update()
 }
