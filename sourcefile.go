@@ -8,6 +8,7 @@ package main
 
 import (
 	"bufio"
+	"fmt"
 	"os"
 )
 
@@ -39,7 +40,7 @@ func NewSourceFile(filename string) (*Sourcefile, error) {
 		}
 		// remove last char \n
 		// FIXME might need a check for some files last line? could crash...
-		strline := string(line[:len(line)-1])
+		strline := fmt.Sprintf("%7d: %s", linecount, line[:len(line)-1])
 
 		// append to buffer
 		newfile.filebuffer.Addline(linecount, strline)
