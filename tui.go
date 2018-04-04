@@ -106,6 +106,7 @@ func NewTui() *TuiT {
 	gc.InitPair(4, gc.C_RED, gc.C_BLACK)     // 4 = Red on black, labels
 	gc.InitPair(5, gc.C_CYAN, gc.C_BLACK)    // 5 = Green on black, directives
 	gc.InitPair(6, gc.C_MAGENTA, gc.C_BLACK) // 6 = Magenta on black, local labels
+	gc.InitPair(7, gc.C_RED, gc.C_WHITE)     // 7 = Red on white, active tab
 
 	newtui.maxy, newtui.maxx = newtui.scr.MaxYX()
 
@@ -288,10 +289,11 @@ func (t *TuiT) drawlinemiddle(y int) {
 // refreshtopbar draws the status bar of top, but does not trigger screen update
 func (t *TuiT) refreshtopbar() {
 	t.topbar.Erase()
-	t.topbar.AttrOn(gc.A_REVERSE)
-	t.topbar.Color(1)
 	if t.focus == 0 {
-		t.topbar.AttrOn(gc.A_BOLD)
+		t.topbar.ColorOn(7)
+	} else {
+		t.topbar.AttrOn(gc.A_REVERSE)
+		t.topbar.ColorOn(1)
 	}
 	t.topbar.Print(fmt.Sprintf("%-*s", t.maxx, " "+t.topmodel.GetFilename()+" in global symbol: "+t.topmodel.GetSymbol(t.toptopline+t.topcursor)))
 	t.topbar.MovePrint(0, t.maxx-20, fmt.Sprintf("%d/%d", t.toptopline+t.topcursor, t.topmodel.GetNrLines()))
@@ -303,13 +305,20 @@ func (t *TuiT) refreshtopbar() {
 // refreshmiddlebar draws the status bar of middle, but does not trigger screen update
 func (t *TuiT) refreshmiddlebar() {
 	t.middlebar.Erase()
-	t.middlebar.AttrOn(gc.A_REVERSE)
-	t.middlebar.Color(1)
+
 	if t.focus == 1 {
-		t.middlebar.AttrOn(gc.A_BOLD)
+		//t.middlebar.AttrOn(gc.A_BOLD)
+		t.middlebar.ColorOn(7)
+	} else {
+		t.middlebar.AttrOn(gc.A_REVERSE)
+		t.middlebar.ColorOn(1)
 	}
-	t.middlebar.Print(fmt.Sprintf("%-*s", t.maxx, " "+t.middlemodel.GetFilename()))
-	t.middlebar.MovePrint(0, t.maxx-20, fmt.Sprintf("%d/%d", t.middletopline+t.middlecursor, t.middlemodel.GetNrLines()))
+	if t.middlelines > 0 {
+		t.middlebar.Print(fmt.Sprintf("%-*s", t.maxx, " "+t.middlemodel.GetFilename()))
+		t.middlebar.MovePrint(0, t.maxx-20, fmt.Sprintf("%d/%d", t.middletopline+t.middlecursor, t.middlemodel.GetNrLines()))
+	} else {
+		t.middlebar.Print(fmt.Sprintf("%-*s", t.maxx, " <no source>"))
+	}
 	t.middlebar.AttrOff(gc.A_REVERSE)
 	t.middlebar.AttrOff(gc.A_BOLD)
 	t.middlebar.NoutRefresh()
