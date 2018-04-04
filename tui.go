@@ -237,7 +237,7 @@ func (t *TuiT) Refreshtopall() {
 // Refreshmiddleall draws everything, can be used for paging or resize
 func (t *TuiT) Refreshmiddleall() {
 	t.refreshmiddle()
-	// FIXME t.refreshmiddlebar()
+	t.refreshmiddlebar()
 	gc.Update()
 }
 
@@ -290,10 +290,29 @@ func (t *TuiT) refreshtopbar() {
 	t.topbar.Erase()
 	t.topbar.AttrOn(gc.A_REVERSE)
 	t.topbar.Color(1)
+	if t.focus == 0 {
+		t.topbar.AttrOn(gc.A_BOLD)
+	}
 	t.topbar.Print(fmt.Sprintf("%-*s", t.maxx, " "+t.topmodel.GetFilename()+" in global symbol: "+t.topmodel.GetSymbol(t.toptopline+t.topcursor)))
 	t.topbar.MovePrint(0, t.maxx-20, fmt.Sprintf("%d/%d", t.toptopline+t.topcursor, t.topmodel.GetNrLines()))
 	t.topbar.AttrOff(gc.A_REVERSE)
+	t.topbar.AttrOff(gc.A_BOLD)
 	t.topbar.NoutRefresh()
+}
+
+// refreshmiddlebar draws the status bar of middle, but does not trigger screen update
+func (t *TuiT) refreshmiddlebar() {
+	t.middlebar.Erase()
+	t.middlebar.AttrOn(gc.A_REVERSE)
+	t.middlebar.Color(1)
+	if t.focus == 1 {
+		t.middlebar.AttrOn(gc.A_BOLD)
+	}
+	t.middlebar.Print(fmt.Sprintf("%-*s", t.maxx, " "+t.middlemodel.GetFilename()))
+	t.middlebar.MovePrint(0, t.maxx-20, fmt.Sprintf("%d/%d", t.middletopline+t.middlecursor, t.middlemodel.GetNrLines()))
+	t.middlebar.AttrOff(gc.A_REVERSE)
+	t.middlebar.AttrOff(gc.A_BOLD)
+	t.middlebar.NoutRefresh()
 }
 
 // full redraw of top windows
@@ -381,7 +400,7 @@ func (t *TuiT) sdownmiddle() {
 	}
 	if updated {
 		t.middle.NoutRefresh()
-		// FIXME t.refreshmiddlebar()
+		t.refreshmiddlebar()
 		gc.Update()
 	}
 }
@@ -405,7 +424,7 @@ func (t *TuiT) supmiddle() {
 	}
 	if updated {
 		t.middle.NoutRefresh()
-		// FIXME t.refreshmiddlebar()
+		t.refreshmiddlebar()
 		gc.Update()
 	}
 }
@@ -693,6 +712,8 @@ main:
 			} else {
 				t.focus = 0
 			}
+			t.Refreshtopall()
+			t.Refreshmiddleall()
 		case gc.KEY_RETURN:
 			t.explain()
 		case 'h', 'H', gc.KEY_F1:
@@ -715,6 +736,7 @@ main:
 		case 'v':
 			if t.opensourcefile() {
 				t.Resize()
+				t.refreshmiddlebar()
 				t.Refresh()
 			}
 		case 'R', 'r':
