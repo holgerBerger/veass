@@ -7,14 +7,11 @@ soon:
 
 assembler
 - searching in assembler text/back/forward/next/previous as vi
-- show in which direction there is markers/jump to marked blocks
+- jump to marked blocks
 - more vi navigation, jump to line number
 - jump to next and previous global symbol
-- propper linebreaks in help
 
 source:
-- jump between lines in both views
-- mark corresponding lines, and show lines in other view
 - enable navigation through marked regions (showing in statusbar the directions?)
 
 later:
