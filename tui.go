@@ -623,7 +623,8 @@ func (t *TuiT) help() {
 		"<enter>: explain instruction/show in other view, ",
 		"<home>: jump to top of file ",
 		"<end>/<G>: jump to end of file, ",
-		"<p>: position info., ",
+		"<n/p>: jump to next/previous marks/global symbol ",
+		"<i>: position info., ",
 		"<c>: clear selection, ",
 		"<space>/<backspace>: select/deselect line, ",
 		"<m> select lines from same sourceline, ",
@@ -761,6 +762,44 @@ func (t *TuiT) clearmarkmiddle() {
 	gc.Update()
 }
 
+func (t *TuiT) jumpprevioustop() {
+	currline := t.toptopline + t.topcursor
+	closest := -1
+	if len(t.topmarked) > 0 {
+		for c := range t.topmarked {
+			if c < currline && c > closest {
+				closest = c
+			}
+		}
+		if closest != -1 {
+			if currline-closest > 1 {
+				t.showlinetop(closest - 1) // FIXME why?
+			} else {
+				t.showlinetop(closest)
+			}
+		}
+	}
+}
+
+func (t *TuiT) jumpnexttop() {
+	currline := t.toptopline + t.topcursor
+	closest := t.topmodel.GetNrLines() + 1
+	if len(t.topmarked) > 0 {
+		for c := range t.topmarked {
+			if c > currline && c < closest {
+				closest = c
+			}
+		}
+		if closest != t.topmodel.GetNrLines()+1 {
+			//			if closest-currline > 1 {
+			//				t.showlinetop(closest + 1)
+			//			} else {
+			t.showlinetop(closest)
+			//			}
+		}
+	}
+}
+
 func (t *TuiT) opensourcefile() bool {
 	var err error
 	filename, _ := t.topmodel.GetPosition(t.toptopline + t.topcursor)
@@ -823,6 +862,10 @@ main:
 			} else {
 				t.jumpendmiddle()
 			}
+		case 'n':
+			t.jumpnexttop()
+		case 'p':
+			t.jumpprevioustop()
 		case gc.KEY_RESIZE:
 			// FIXME does not work
 			t.bottom.Println("resize!")
@@ -862,7 +905,7 @@ main:
 			}
 		case 'h', 'H', gc.KEY_F1:
 			t.help()
-		case 'p', 'P':
+		case 'i', 'I':
 			t.posinfo()
 		case ' ':
 			t.marktop()
