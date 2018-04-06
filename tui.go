@@ -301,6 +301,29 @@ func (t *TuiT) refreshtopbar() {
 	t.topbar.MovePrint(0, t.maxx-20, fmt.Sprintf("%d/%d", t.toptopline+t.topcursor, t.topmodel.GetNrLines()))
 	t.topbar.AttrOff(gc.A_REVERSE)
 	t.topbar.AttrOff(gc.A_BOLD)
+
+	// marker markers <>
+	// show in topbar if there is marks before < or behind > current view
+	if len(t.topmarked) > 0 {
+		min := t.topmodel.GetNrLines() + 1
+		max := 0
+		for i := range t.topmarked {
+			if i > max {
+				max = i
+			} else if i < min {
+				min = i
+			}
+		}
+		if min < t.toptopline {
+			t.topbar.ColorOn(2)
+			t.topbar.MovePrint(0, t.maxx-24, "<")
+		}
+		if max > t.toptopline+t.toplines {
+			t.topbar.ColorOn(2)
+			t.topbar.MovePrint(0, t.maxx-23, ">")
+		}
+	}
+
 	t.topbar.NoutRefresh()
 }
 
@@ -703,6 +726,7 @@ func (t *TuiT) unmarktop() {
 func (t *TuiT) clearmarktop() {
 	t.topmarked = make(map[int]bool)
 	t.refreshtop()
+	t.refreshtopbar()
 	gc.Update()
 }
 
