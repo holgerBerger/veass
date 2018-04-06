@@ -151,6 +151,7 @@ func NewAssemblerFile(filename string) (*AssemblerFile, error) {
 					flds := strings.Fields(strline[pos:])
 					v, err := strconv.Atoi(flds[1])
 					if err == nil {
+						// BUG this is a hack, we access and modify underlying data structure
 						block := (cl - 1) / lineblocksize
 						newfile.filebuffer.lineblocks[block].lines[(cl-1)%lineblocksize] = fmt.Sprintf("        .byte %3d      # '%s'", v, string(rune(v)))
 					}
