@@ -531,7 +531,7 @@ func (t *TuiT) jumpendmiddle() {
 
 func (t *TuiT) showlinetop(line int) {
 	if line <= t.topmodel.GetNrLines() {
-		t.toptopline = line
+		t.toptopline = mini(line, t.topmodel.GetNrLines()-t.toplines+1)
 		t.topcursor = 0
 		t.Refreshtopall()
 	}
@@ -764,8 +764,8 @@ func (t *TuiT) clearmarkmiddle() {
 
 func (t *TuiT) jumpprevioustop() {
 	currline := t.toptopline + t.topcursor
-	closest := -1
 	if len(t.topmarked) > 0 {
+		closest := -1
 		for c := range t.topmarked {
 			if c < currline && c > closest {
 				closest = c
@@ -778,24 +778,43 @@ func (t *TuiT) jumpprevioustop() {
 				t.showlinetop(closest)
 			}
 		}
+	} else {
+		currsymbol := t.topmodel.GetSymbol(currline)
+		l := currline
+		for l > 1 && currsymbol == t.topmodel.GetSymbol(l) {
+			l--
+		}
+		// now search again for start of block
+		currsymbol = t.topmodel.GetSymbol(l)
+		for l > 1 && currsymbol == t.topmodel.GetSymbol(l) {
+			l--
+		}
+		if l != currline {
+			t.showlinetop(l + 1)
+		}
 	}
 }
 
 func (t *TuiT) jumpnexttop() {
 	currline := t.toptopline + t.topcursor
-	closest := t.topmodel.GetNrLines() + 1
 	if len(t.topmarked) > 0 {
+		closest := t.topmodel.GetNrLines() + 1
 		for c := range t.topmarked {
 			if c > currline && c < closest {
 				closest = c
 			}
 		}
 		if closest != t.topmodel.GetNrLines()+1 {
-			//			if closest-currline > 1 {
-			//				t.showlinetop(closest + 1)
-			//			} else {
 			t.showlinetop(closest)
-			//			}
+		}
+	} else {
+		currsymbol := t.topmodel.GetSymbol(currline)
+		l := currline
+		for l < t.topmodel.GetNrLines()-1 && currsymbol == t.topmodel.GetSymbol(l) {
+			l++
+		}
+		if l != currline {
+			t.showlinetop(l)
 		}
 	}
 }

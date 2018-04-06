@@ -102,7 +102,10 @@ func (a AssemblerModel) GetFilename() string {
 
 // GetSymbol returns the global symbol preceeding a line
 func (a AssemblerModel) GetSymbol(line int) string {
-	return a.assemblerfile.index[line].symbol
+	if line < len(a.assemblerfile.index) {
+		return a.assemblerfile.index[line].symbol
+	}
+	return ""
 }
 
 // GetPosition returns filename and position in source for line
