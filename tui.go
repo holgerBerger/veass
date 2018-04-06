@@ -616,13 +616,37 @@ func (t *TuiT) explain() {
 // help prints keyboard help
 func (t *TuiT) help() {
 	t.bottom.Erase()
-	t.bottom.Print("<home>: jump to top of file, <end>/<G>: jump to end of file, ")
-	t.bottom.Print("<H>/<h>/<F1>: help,  <q>: quit,  <enter>: explain instruction, ")
-	t.bottom.Print("<p>: position info., <c>: clear selection, <m> select lines from same sourceline, ")
-	//	<space>/<backspace>: select/deselect line,
-	t.bottom.Print("<v>: view sourcefile, <V> close sourcefile, <TAB>: change focus")
+
+	msg := []string{
+		"<H>/<h>/<F1>: help, ",
+		"<q>: quit, ",
+		"<enter>: explain instruction/show in other view, ",
+		"<home>: jump to top of file ",
+		"<end>/<G>: jump to end of file, ",
+		"<p>: position info., ",
+		"<c>: clear selection, ",
+		"<space>/<backspace>: select/deselect line, ",
+		"<m> select lines from same sourceline, ",
+		"<v>: view sourcefile, ",
+		"<V> close sourcefile, ",
+		"<TAB>: change focus "}
+
+	for _, m := range msg {
+		t.printwithbreak(m, t.bottom)
+	}
+
 	t.bottom.NoutRefresh()
 	gc.Update()
+}
+
+// print but break line before text if too long
+func (t *TuiT) printwithbreak(text string, w *gc.Window) {
+	_, x := w.CursorYX()
+	_, width := w.MaxYX()
+	if x+len(text) >= width && len(text) < width {
+		w.Println("")
+	}
+	w.Print(text)
 }
 
 // print some position info, helps in case of longmangeld c++ names which do not fit into sttaus bar
