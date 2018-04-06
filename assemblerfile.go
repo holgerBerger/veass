@@ -147,6 +147,13 @@ func NewAssemblerFile(filename string) (*AssemblerFile, error) {
 					}
 				} else if strings.Index(strline[pos:], ".globl ") != -1 {
 					cursymbol = strings.Join(strings.Fields(strline[pos:])[1:], " ")
+				} else if strings.Index(strline[pos:], ".byte") != -1 {
+					flds := strings.Fields(strline[pos:])
+					v, err := strconv.Atoi(flds[1])
+					if err == nil {
+						block := (cl - 1) / lineblocksize
+						newfile.filebuffer.lineblocks[block].lines[(cl-1)%lineblocksize] = fmt.Sprintf("        .byte %3d      # '%s'", v, string(rune(v)))
+					}
 				}
 			} // lines with .
 		}
