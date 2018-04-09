@@ -634,7 +634,8 @@ func (t *TuiT) help() {
 		"<v>: view sourcefile, ",
 		"<V> close sourcefile, ",
 		"<TAB>: change focus ",
-		"</>/<?>: search forward/backwards"}
+		"</>/<?>: search forward/backwards",
+		"<d>: highlight dependencies"}
 
 	for _, m := range msg {
 		t.printwithbreak(m, t.bottom)
@@ -823,6 +824,44 @@ func (t *TuiT) jumpnexttop() {
 	}
 }
 
+// highlight dependencies, highlight input and out registers of current line
+func (t *TuiT) dependencies() {
+	// search all registers
+	re := regexp.MustCompile(`(%v\d+|%s\d+)|(?:(%[a-z]+)[^,\)])`)
+	matches := re.FindAllString(t.topmodel.GetLine(t.toptopline+t.topcursor), -1)
+
+	// first register is usually modified, therefor output
+	// vst/vsc and st do not alter first register!
+	// further registers are usually input
+
+	instrwp := strings.Fields(t.topmodel.GetLine(t.toptopline + t.topcursor))[0]
+	instr := strings.Split(instrwp, ".")
+
+	output := ""
+	input := ""
+
+	if matches != nil {
+		// those are instructions with first arg not being output
+		if strings.Index("st vst vsc lvl", instr[0]) != -1 {
+			input = input + "(" + matches[0] + ")"
+		} else {
+			output = output + "(" + matches[0] + ")"
+		}
+
+		for _, m := range matches[1:] {
+			if input != "" {
+				input = input + "|"
+			}
+			input = input + "(" + m + ")"
+		}
+
+		t.topmodel.SetRegexp(regexp.MustCompile(input), regexp.MustCompile(output))
+		t.refreshtop()
+		gc.Update()
+	}
+}
+
+// search forward and backward depending on "dir" -1/1
 func (t *TuiT) search(dir int) {
 	if dir > 0 {
 		if t.toptopline+t.topcursor >= t.topmodel.GetNrLines()-1 {
@@ -987,10 +1026,13 @@ main:
 			case gc.KEY_BACKSPACE:
 				t.unmarktop()
 			case 'c':
+				t.topmodel.SetRegexp(nil, nil)
 				t.clearmarktop()
 				t.clearmarkmiddle()
 			case 'm':
 				t.markalltop()
+			case 'd':
+				t.dependencies()
 			case 'V':
 				t.focus = 0
 				t.middlelines = 0

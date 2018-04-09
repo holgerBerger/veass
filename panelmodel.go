@@ -2,7 +2,11 @@ package main
 
 // 	(c) Holger Berger 2018
 
-import "github.com/rthornton128/goncurses"
+import (
+	"regexp"
+
+	"github.com/rthornton128/goncurses"
+)
 
 // PanelModel is the interface a view uses to get data from underlying data model
 type PanelModel interface {
@@ -13,4 +17,5 @@ type PanelModel interface {
 	GetFilename() string
 	GetSymbol(line int) string
 	GetPosition(line int) (string, int)
+	SetRegexp(r1, r2 *regexp.Regexp)
 }

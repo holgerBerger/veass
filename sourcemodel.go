@@ -11,6 +11,8 @@ package main
 */
 
 import (
+	"regexp"
+
 	"github.com/rthornton128/goncurses"
 )
 
@@ -80,4 +82,8 @@ func (a SourceModel) GetSymbol(line int) string {
 func (a SourceModel) GetPosition(line int) (string, int) {
 	// this is a dummy
 	return "", 0
+}
+
+// SetRegexp is a dummy
+func (a SourceModel) SetRegexp(r1, r2 *regexp.Regexp) {
 }

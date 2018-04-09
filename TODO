@@ -7,7 +7,6 @@ soon:
 
 assembler
 - more vi navigation, jump to line number
-- highlight same registers around cursor location
 
 source:
 - enable navigation through marked regions (showing in statusbar the directions?)
