@@ -69,8 +69,11 @@ type TuiT struct {
 
 	bottomlines int // size of bottom window
 
-	ops       *Opstable
-	explainre *regexp.Regexp
+	ops          *Opstable
+	explainre    *regexp.Regexp
+	searchinput  bool
+	searchstring string
+	searchdir    int
 }
 
 // NewTui constructs a user interface, inits ncurses, colors etc
@@ -623,14 +626,15 @@ func (t *TuiT) help() {
 		"<enter>: explain instruction/show in other view, ",
 		"<home>: jump to top of file ",
 		"<end>/<G>: jump to end of file, ",
-		"<n/p>: jump to next/previous marks/global symbol ",
+		"<n/p>: jump to next/previous search/marks/global symbol ",
 		"<i>: position info., ",
 		"<c>: clear selection, ",
 		"<space>/<backspace>: select/deselect line, ",
 		"<m> select lines from same sourceline, ",
 		"<v>: view sourcefile, ",
 		"<V> close sourcefile, ",
-		"<TAB>: change focus "}
+		"<TAB>: change focus ",
+		"</>/<?>: search forward/backwards"}
 
 	for _, m := range msg {
 		t.printwithbreak(m, t.bottom)
@@ -819,6 +823,32 @@ func (t *TuiT) jumpnexttop() {
 	}
 }
 
+func (t *TuiT) search(dir int) {
+	if dir > 0 {
+		if t.toptopline+t.topcursor >= t.topmodel.GetNrLines()-1 {
+			t.toptopline = 1
+			t.topcursor = 0
+		}
+		for linenr := t.toptopline + t.topcursor + 1; linenr < t.topmodel.GetNrLines(); linenr++ {
+			if strings.Index(t.topmodel.GetLine(linenr), t.searchstring) != -1 {
+				t.showlinetop(linenr)
+				break
+			}
+		}
+	} else {
+		if t.toptopline+t.topcursor <= 2 {
+			t.toptopline = maxi(1, t.topmodel.GetNrLines()-t.toplines+2)
+			t.topcursor = mini(t.topmodel.GetNrLines()-t.toptopline, t.toplines)
+		}
+		for linenr := t.toptopline + t.topcursor - 1; linenr > 1; linenr-- {
+			if strings.Index(t.topmodel.GetLine(linenr), t.searchstring) != -1 {
+				t.showlinetop(linenr)
+				break
+			}
+		}
+	}
+}
+
 func (t *TuiT) opensourcefile() bool {
 	var err error
 	filename, _ := t.topmodel.GetPosition(t.toptopline + t.topcursor)
@@ -842,121 +872,164 @@ func (t *TuiT) Run() {
 	t.Refreshtopall()
 main:
 	for {
-		switch t.top.GetChar() {
-		case 'q', 'Q':
-			break main
-		case gc.KEY_DOWN, 'j':
-			if t.focus == 0 {
-				t.sdowntop()
-			} else {
-				t.sdownmiddle()
+		input := t.top.GetChar()
+		if t.searchinput {
+			switch input {
+			case gc.KEY_RETURN:
+				t.searchinput = false
+				if t.searchstring != "" {
+					t.search(t.searchdir)
+				}
+			case gc.KEY_BACKSPACE:
+				t.searchstring = t.searchstring[:len(t.searchstring)-1]
+			default:
+				t.searchstring = t.searchstring + string(input)
 			}
-		case gc.KEY_UP, 'k':
-			if t.focus == 0 {
-				t.suptop()
-			} else {
-				t.supmiddle()
-			}
-		case gc.KEY_PAGEDOWN:
-			if t.focus == 0 {
-				t.pagedowntop()
-			} else {
-				t.pagedownmiddle()
-			}
-		case gc.KEY_PAGEUP:
-			if t.focus == 0 {
-				t.pageuptop()
-			} else {
-				t.pageupmiddle()
-			}
-		case gc.KEY_HOME:
-			if t.focus == 0 {
-				t.jumphometop()
-			} else {
-				t.jumphomemiddle()
-			}
-		case gc.KEY_END, 'G':
-			if t.focus == 0 {
-				t.jumpendtop()
-			} else {
-				t.jumpendmiddle()
-			}
-		case 'n':
-			t.jumpnexttop()
-		case 'p':
-			t.jumpprevioustop()
-		case gc.KEY_RESIZE:
-			// FIXME does not work
-			t.bottom.Println("resize!")
-		case gc.KEY_TAB:
-			if t.focus == 0 && t.middlelines > 0 {
-				t.focus = 1
-			} else {
+			t.bottom.Erase()
+			t.bottom.Print([3]string{"?", "", "/"}[t.searchdir+1] + t.searchstring)
+			t.bottom.NoutRefresh()
+			gc.Update()
+		} else {
+			switch input {
+			case 'q', 'Q':
+				break main
+			case gc.KEY_DOWN, 'j':
+				if t.focus == 0 {
+					t.sdowntop()
+				} else {
+					t.sdownmiddle()
+				}
+			case gc.KEY_UP, 'k':
+				if t.focus == 0 {
+					t.suptop()
+				} else {
+					t.supmiddle()
+				}
+			case gc.KEY_PAGEDOWN:
+				if t.focus == 0 {
+					t.pagedowntop()
+				} else {
+					t.pagedownmiddle()
+				}
+			case gc.KEY_PAGEUP:
+				if t.focus == 0 {
+					t.pageuptop()
+				} else {
+					t.pageupmiddle()
+				}
+			case gc.KEY_HOME:
+				if t.focus == 0 {
+					t.jumphometop()
+				} else {
+					t.jumphomemiddle()
+				}
+			case gc.KEY_END, 'G':
+				if t.focus == 0 {
+					t.jumpendtop()
+				} else {
+					t.jumpendmiddle()
+				}
+			case 'n':
+				if t.searchstring != "" {
+					t.search(t.searchdir)
+				} else {
+					t.jumpnexttop()
+				}
+			case 'p':
+				if t.searchstring != "" {
+					t.search(-1 * t.searchdir)
+				} else {
+					t.jumpprevioustop()
+				}
+			case gc.KEY_RESIZE:
+				// FIXME does not work
+				t.bottom.Println("resize!")
+			case gc.KEY_TAB:
+				if t.focus == 0 && t.middlelines > 0 {
+					t.focus = 1
+				} else {
+					t.focus = 0
+				}
+				t.Refreshtopall()
+				t.Refreshmiddleall()
+			case gc.KEY_RETURN:
+				if t.focus == 0 {
+					if t.middlelines > 0 {
+						filename, line := t.topmodel.GetPosition(t.toptopline + t.topcursor)
+						if filename == t.middlemodel.GetFilename() {
+							t.middlemarked[line] = true
+							t.showlinemiddle(line)
+						} else {
+							t.bottom.Erase()
+							t.bottom.Println("wrong file loaded, use <v> to load file.")
+							t.bottom.NoutRefresh()
+							gc.Update()
+						}
+					}
+					t.explain()
+				} else {
+					/*
+						if t.middlelines > 0 {
+							_, line := t.middlemodel.GetPosition(t.middletopline + t.middlecursor)
+							t.middlemarked[line] = true
+							t.Refreshtopall()
+							gc.Update()
+						}
+					*/
+					t.showass()
+				}
+			case 'h', 'H', gc.KEY_F1:
+				t.help()
+			case 'i', 'I':
+				t.posinfo()
+			case ' ':
+				t.marktop()
+			case gc.KEY_BACKSPACE:
+				t.unmarktop()
+			case 'c':
+				t.clearmarktop()
+				t.clearmarkmiddle()
+			case 'm':
+				t.markalltop()
+			case 'V':
 				t.focus = 0
-			}
-			t.Refreshtopall()
-			t.Refreshmiddleall()
-		case gc.KEY_RETURN:
-			if t.focus == 0 {
-				if t.middlelines > 0 {
-					filename, line := t.topmodel.GetPosition(t.toptopline + t.topcursor)
-					if filename == t.middlemodel.GetFilename() {
+				t.middlelines = 0
+				t.Resize()
+				t.Refresh()
+			case 'v':
+				if t.opensourcefile() {
+					t.Resize()
+					_, line := t.topmodel.GetPosition(t.toptopline + t.topcursor)
+					if line > 0 {
 						t.middlemarked[line] = true
 						t.showlinemiddle(line)
-					} else {
-						t.bottom.Erase()
-						t.bottom.Println("wrong file loaded, use <v> to load file.")
-						t.bottom.NoutRefresh()
-						gc.Update()
 					}
+					t.refreshmiddlebar()
+					t.Refresh()
 				}
-				t.explain()
-			} else {
-				/*
-					if t.middlelines > 0 {
-						_, line := t.middlemodel.GetPosition(t.middletopline + t.middlecursor)
-						t.middlemarked[line] = true
-						t.Refreshtopall()
-						gc.Update()
-					}
-				*/
-				t.showass()
+			case 'R', 'r':
+				// FIXME does not work!??!
+				t.bottom.Erase()
+				t.bottom.Refresh()
+				t.Refreshtopall()
+				t.Refreshmiddleall()
+			case '/':
+				t.searchinput = true
+				t.searchstring = ""
+				t.searchdir = 1
+				t.bottom.Erase()
+				t.bottom.Print("/" + t.searchstring)
+				t.bottom.NoutRefresh()
+				gc.Update()
+			case '?':
+				t.searchinput = true
+				t.searchstring = ""
+				t.searchdir = -1
+				t.bottom.Erase()
+				t.bottom.Print([3]string{"?", "", "/"}[t.searchdir+1] + t.searchstring)
+				t.bottom.NoutRefresh()
+				gc.Update()
 			}
-		case 'h', 'H', gc.KEY_F1:
-			t.help()
-		case 'i', 'I':
-			t.posinfo()
-		case ' ':
-			t.marktop()
-		case gc.KEY_BACKSPACE:
-			t.unmarktop()
-		case 'c':
-			t.clearmarktop()
-			t.clearmarkmiddle()
-		case 'm':
-			t.markalltop()
-		case 'V':
-			t.focus = 0
-			t.middlelines = 0
-			t.Resize()
-			t.Refresh()
-		case 'v':
-			if t.opensourcefile() {
-				t.Resize()
-				_, line := t.topmodel.GetPosition(t.toptopline + t.topcursor)
-				if line > 0 {
-					t.middlemarked[line] = true
-					t.showlinemiddle(line)
-				}
-				t.refreshmiddlebar()
-				t.Refresh()
-			}
-		case 'R', 'r':
-			// FIXME does not work!??!
-			t.bottom.Erase()
-			t.bottom.Refresh()
-			t.Refreshtopall()
-			t.Refreshmiddleall()
 		}
 	}
 	gc.End()
