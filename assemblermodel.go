@@ -77,14 +77,14 @@ func (a *AssemblerModel) GetCell(x, y int) (rune, int16, goncurses.Char) {
 			a.lastcolor = 5
 		}
 
-		// match registers
+		// match registers, we attach an end marker | here, to properly match cases where a register is last argument
 		if a.reregister1 != nil {
-			a.rematch1 = a.reregister1.FindAllStringIndex(a.lastline, -1)
+			a.rematch1 = a.reregister1.FindAllStringIndex(a.lastline+"|", -1)
 		} else {
 			a.rematch1 = nil
 		}
 		if a.reregister2 != nil {
-			a.rematch2 = a.reregister2.FindAllStringIndex(a.lastline, -1)
+			a.rematch2 = a.reregister2.FindAllStringIndex(a.lastline+"|", -1)
 		} else {
 			a.rematch2 = nil
 		}

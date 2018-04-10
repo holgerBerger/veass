@@ -842,18 +842,25 @@ func (t *TuiT) dependencies() {
 
 	if matches != nil {
 		// those are instructions with first arg not being output
-		if strings.Index("st vst vsc lvl", instr[0]) != -1 {
-			input = input + "(" + matches[0] + ")"
+		if strings.Index("st vst vsc lvl shm", instr[0]) != -1 {
+			input = input + "(" + matches[0] + `)[\),\|]`
 		} else {
-			output = output + "(" + matches[0] + ")"
+			output = output + "(" + matches[0] + `)[\),\|]`
 		}
 
 		for _, m := range matches[1:] {
 			if input != "" {
 				input = input + "|"
 			}
-			input = input + "(" + m + ")"
+			input = input + "(" + m + `)[\),\|]`
 		}
+
+		/*
+			t.bottom.Erase()
+			t.bottom.Println(input)
+			t.bottom.Println(output)
+			t.bottom.NoutRefresh()
+		*/
 
 		t.topmodel.SetRegexp(regexp.MustCompile(input), regexp.MustCompile(output))
 		t.refreshtop()
