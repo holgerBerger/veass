@@ -870,13 +870,20 @@ func (t *TuiT) dependencies() {
 
 // search forward and backward depending on "dir" -1/1
 func (t *TuiT) search(dir int) {
+	re, err := regexp.Compile(t.searchstring)
+	if err != nil {
+		t.bottom.Println(err)
+		return
+	}
 	if dir > 0 {
 		if t.toptopline+t.topcursor >= t.topmodel.GetNrLines()-1 {
 			t.toptopline = 1
 			t.topcursor = 0
 		}
 		for linenr := t.toptopline + t.topcursor + 1; linenr < t.topmodel.GetNrLines(); linenr++ {
-			if strings.Index(t.topmodel.GetLine(linenr), t.searchstring) != -1 {
+			m := re.FindString(t.topmodel.GetLine(linenr))
+			// if strings.Index(t.topmodel.GetLine(linenr), t.searchstring) != -1 {
+			if m != "" {
 				t.showlinetop(linenr)
 				break
 			}
@@ -887,7 +894,9 @@ func (t *TuiT) search(dir int) {
 			t.topcursor = mini(t.topmodel.GetNrLines()-t.toptopline, t.toplines)
 		}
 		for linenr := t.toptopline + t.topcursor - 1; linenr > 1; linenr-- {
-			if strings.Index(t.topmodel.GetLine(linenr), t.searchstring) != -1 {
+			m := re.FindString(t.topmodel.GetLine(linenr))
+			// if strings.Index(t.topmodel.GetLine(linenr), t.searchstring) != -1 {
+			if m != "" {
 				t.showlinetop(linenr)
 				break
 			}
