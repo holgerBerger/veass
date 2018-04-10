@@ -843,16 +843,16 @@ func (t *TuiT) dependencies() {
 	if matches != nil {
 		// those are instructions with first arg not being output
 		if strings.Index("st vst vsc lvl shm", instr[0]) != -1 {
-			input = input + "(" + matches[0] + `)[\),\|]`
+			input = input + "(" + matches[0] + `)[\),\|\s]`
 		} else {
-			output = output + "(" + matches[0] + `)[\),\|]`
+			output = output + "(" + matches[0] + `)[\),\|\s]`
 		}
 
 		for _, m := range matches[1:] {
 			if input != "" {
 				input = input + "|"
 			}
-			input = input + "(" + m + `)[\),\|]`
+			input = input + "(" + m + `)[\),\|\s]`
 		}
 
 		/*
