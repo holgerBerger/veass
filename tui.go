@@ -37,6 +37,7 @@ import (
 	"os"
 	"os/signal"
 	"regexp"
+	"strconv"
 	"strings"
 	"syscall"
 
@@ -74,6 +75,8 @@ type TuiT struct {
 	searchinput  bool
 	searchstring string
 	searchdir    int
+	numberinput  bool
+	numberstring string
 }
 
 // NewTui constructs a user interface, inits ncurses, colors etc
@@ -944,8 +947,42 @@ main:
 			t.bottom.Print([3]string{"?", "", "/"}[t.searchdir+1] + t.searchstring)
 			t.bottom.NoutRefresh()
 			gc.Update()
+		} else if t.numberinput {
+			switch input {
+			case gc.KEY_RETURN:
+				t.numberinput = false
+				t.bottom.Println("return")
+				t.bottom.NoutRefresh()
+				gc.Update()
+				if t.numberstring != "" {
+					line, err := strconv.Atoi(t.numberstring)
+					if err != nil {
+						t.bottom.Println(line)
+						t.showlinetop(line)
+						t.top.NoutRefresh()
+						gc.Update()
+					} else {
+						t.bottom.Println(err)
+					}
+				}
+			case gc.KEY_BACKSPACE:
+				t.numberstring = t.numberstring[:len(t.numberstring)-1]
+			case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
+				t.numberstring = t.numberstring + string(input)
+			}
+			t.bottom.Erase()
+			t.bottom.Print(t.numberstring)
+			t.bottom.NoutRefresh()
+			gc.Update()
 		} else {
 			switch input {
+			case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
+				t.numberinput = true
+				t.numberstring = string(input)
+				t.bottom.Erase()
+				t.bottom.Print(t.numberstring)
+				t.bottom.NoutRefresh()
+				gc.Update()
 			case 'q', 'Q':
 				break main
 			case gc.KEY_DOWN, 'j':
