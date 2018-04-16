@@ -17,9 +17,8 @@ later:
 - jump to labels with completion in assembler
 - reading of .L files, display of messages near source or in bottom window
 
-- SX-ACE support?
 
 even later:
 
-- x86 assembler (where to get descriptions from?)
 - intel optrpt files 
+- SX-ACE support?

@@ -682,9 +682,11 @@ func (t *TuiT) help() {
 		"<m> select lines from same sourceline, ",
 		"<v>: view sourcefile, ",
 		"<V> close sourcefile, ",
-		"<TAB>: change focus ",
-		"</>/<?>: search forward/backwards",
-		"<d>: highlight dependencies"}
+		"<TAB>: change focus, ",
+		"</>/<?>: search forward/backwards, ",
+		"<d>: highlight dependencies, ",
+		"<b>: follow branch",
+	}
 
 	for _, m := range msg {
 		t.printwithbreak(m, t.bottom)
@@ -873,6 +875,17 @@ func (t *TuiT) jumpnexttop() {
 	}
 }
 
+func (t *TuiT) followbranch() {
+	line := t.topmodel.GetLine(t.toptopline + t.topcursor)
+	flds := strings.Fields(line)
+	if flds[0][0] == 'b' {
+		tokens := strings.Split(flds[1], ",")
+		target := tokens[len(tokens)-1]
+		t.searchstring = target
+		t.search(-1)
+	}
+}
+
 // highlight dependencies, highlight input and out registers of current line
 func (t *TuiT) dependencies() {
 	// search all registers
@@ -1003,6 +1016,7 @@ main:
 				if t.numberstring != "" {
 					line, err := strconv.Atoi(t.numberstring)
 					if err != nil {
+						t.bottom.Println("go to ")
 						t.bottom.Println(line)
 						t.showlinetop(line)
 						t.top.NoutRefresh()
@@ -1141,6 +1155,8 @@ main:
 				t.middlelines = 0
 				t.Resize()
 				t.Refresh()
+			case 'b':
+				t.followbranch()
 			case 'v':
 				if t.opensourcefile() {
 					t.Resize()
