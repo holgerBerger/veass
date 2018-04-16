@@ -876,17 +876,21 @@ func (t *TuiT) jumpnexttop() {
 }
 
 func (t *TuiT) followbranch() {
-	line := t.topmodel.GetLine(t.toptopline + t.topcursor)
+	oldpos := t.toptopline + t.topcursor
+	line := t.topmodel.GetLine(oldpos)
 	flds := strings.Fields(line)
 	if flds[0][0] == 'b' || flds[0][0] == 'j' {
 		tokens := strings.Split(flds[1], ",")
 		target := tokens[len(tokens)-1]
 		if target[0] == '.' {
-			t.searchstring = "\\" + target // for regexp
+			t.searchstring = "^\\" + target // for regexp
 		} else {
-			t.searchstring = target
+			t.searchstring = "^" + target
 		}
 		t.search(-1)
+		if t.toptopline+t.topcursor == oldpos {
+			t.search(1)
+		}
 	}
 }
 
