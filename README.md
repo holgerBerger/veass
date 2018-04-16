@@ -34,6 +34,8 @@ If `return` is pressed in source panel, the according assembler lines are highli
 and the first marked line is shown.
 
 if `return` is pressed in assembler panel, the according source line is highlighted
-and show in the source view.
+and shown in the source view, and the instruction is explained (for VE and x86).
 
 The marking of lines in both views can be cleared with `c`.
+
+`/` starts a search, `n` and `p` jump to next or previous search hit, marked region or global label.
