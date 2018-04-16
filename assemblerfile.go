@@ -98,6 +98,9 @@ func NewAssemblerFile(filename string) (*AssemblerFile, error) {
 	for cl := 1; cl < linecount; cl++ {
 		strline := newfile.filebuffer.GetLine(cl)
 		// process the line, search for .file and .loc and <# line nr>
+		if len(strline) == 0 {
+			continue
+		}
 		if strline[0] == '#' {
 			if strings.Index(strline, "# line") != -1 {
 				flds := strings.Fields(strline)
