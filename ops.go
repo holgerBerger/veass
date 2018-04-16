@@ -13,8 +13,8 @@ type Opstable struct {
 	re  *regexp.Regexp
 }
 
-// NewOpstable creates table expanding x.y.z to x.y and x.z, cutting at first [ or space
-func NewOpstable() *Opstable {
+// NewOpstableVE creates table expanding x.y.z to x.y and x.z, cutting at first [ or space
+func NewOpstableVE() *Opstable {
 	var no Opstable
 
 	no.ops = make(map[string]string)
@@ -41,9 +41,26 @@ func NewOpstable() *Opstable {
 	// FIXME hardcoded VE
 	for co := range bcodes {
 		op := "b" + co
-		no.ops[op] = "= Branch on condition " + bcodes[co]
+		no.ops[op] = "b" + co + " = Branch on condition " + bcodes[co]
 		op = "br" + co
-		no.ops[op] = "= Branch relative on condition " + bcodes[co]
+		no.ops[op] = "br" + co + " = Branch relative on condition " + bcodes[co]
+	}
+
+	return &no
+}
+
+// NewOpstableX86 creates table expanding x.y.z to x.y and x.z, cutting at first [ or space
+func NewOpstableX86() *Opstable {
+	var no Opstable
+
+	no.ops = make(map[string]string)
+
+	for o := range x86ops {
+		if o[len(o)-2:] == "cc" {
+			for c := range x86cc {
+				x86ops[o[:len(o)-2]+c] = x86ops[o] + ", " + x86cc[c]
+			}
+		}
 	}
 
 	return &no

@@ -70,7 +70,8 @@ type TuiT struct {
 
 	bottomlines int // size of bottom window
 
-	ops          *Opstable
+	opsve        *Opstable
+	opsx86       *Opstable
 	explainre    *regexp.Regexp
 	searchinput  bool
 	searchstring string
@@ -88,7 +89,8 @@ func NewTui() *TuiT {
 	newtui.topmarked = make(map[int]bool)
 	newtui.middlemarked = make(map[int]bool)
 
-	newtui.ops = NewOpstable()
+	newtui.opsve = NewOpstableVE()
+	newtui.opsx86 = NewOpstableX86()
 	newtui.explainre = regexp.MustCompile(`^\s+(.+?)[\[\s].+$`)
 
 	newtui.scr, err = gc.Init()
@@ -551,8 +553,8 @@ func (t *TuiT) showlinemiddle(line int) {
 	}
 }
 
-// explain an assembly instruction
-func (t *TuiT) explain() {
+// explain an assembly instruction for VE
+func (t *TuiT) explainVE() {
 	line := t.topmodel.GetLine(t.toptopline + t.topcursor)
 	// find main explanation
 	m := t.explainre.FindStringSubmatch(line)
@@ -566,7 +568,7 @@ func (t *TuiT) explain() {
 	}
 	t.bottom.Erase()
 	//t.bottom.Println("try <", m[1], "> ")
-	e := t.ops.getops(m[1])
+	e := t.opsve.getops(m[1])
 	if e != "" {
 		t.bottom.Println(e)
 	} else {
@@ -580,7 +582,7 @@ func (t *TuiT) explain() {
 			}
 			if o != "" {
 				// t.bottom.Println("try <", o, "> ")
-				e := t.ops.getops(o)
+				e := t.opsve.getops(o)
 				if e != "" {
 					t.bottom.Println(e)
 					break outer
@@ -612,6 +614,50 @@ func (t *TuiT) explain() {
 			}
 			t.bottom.Print(register, ":", registers[register])
 			first = false
+		}
+	}
+
+	t.bottom.NoutRefresh()
+	gc.Update()
+}
+
+// explain an assembly instruction for x86
+func (t *TuiT) explainX86() {
+	line := t.topmodel.GetLine(t.toptopline + t.topcursor)
+	// find main explanation
+	m := t.explainre.FindStringSubmatch(line)
+	if m == nil {
+		// for lines without spaces at end
+		r := regexp.MustCompile(`^\s+(.+?)$`)
+		m = r.FindStringSubmatch(line)
+		if m == nil {
+			return // bail out for lines not matching
+		}
+	}
+	t.bottom.Erase()
+	// t.bottom.Println("try <", m[1], "> ")
+	e, ok := x86ops[m[1]]
+	if ok {
+		t.bottom.Println(m[1], "=", e)
+	} else {
+		if m[1][0] == 'v' { // see if we find it without the v
+			// t.bottom.Println("try <", m[1][1:], "> ")
+			e, ok := x86ops[m[1][1:]]
+			if ok {
+				t.bottom.Println(m[1], "=", e)
+			} else { // see if we find it without first and last character
+				// t.bottom.Println("try <", m[1][1:len(m[1])-1], "> ")
+				e, ok := x86ops[m[1][1:len(m[1])-1]]
+				if ok {
+					t.bottom.Println(m[1], "=", e)
+				}
+			}
+		} else { // see if we find it without last character
+			// t.bottom.Println("try <", m[1][:len(m[1])-1], "> ")
+			e, ok := x86ops[m[1][:len(m[1])-1]]
+			if ok {
+				t.bottom.Println(m[1], "=", e)
+			}
 		}
 	}
 
@@ -1058,7 +1104,11 @@ main:
 							gc.Update()
 						}
 					}
-					t.explain()
+					if strings.Index(t.topmodel.GetLine(1), ".ident \"n") > -1 {
+						t.explainVE()
+					} else {
+						t.explainX86()
+					}
 				} else {
 					/*
 						if t.middlelines > 0 {
