@@ -67,4 +67,4 @@ You will need the ncurses library on your system as well.
 
 ## what does it look like
 
-![screenshot](https://github.com/holgerBerger/veass/veass_stream.png)
+![screenshot](https://github.com/holgerBerger/veass/blob/master/veass_stream.png?raw=true)
