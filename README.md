@@ -3,11 +3,14 @@
 VE assistant
 
 Allows to browse assembler code with annotations and compare
-with source code.
+with source code, displays short explanation of assembler mnemonics for the
+occasional look at assembler code.
+
+Supports NEC Aurora TSUBASA VE 1.0 assembler syntax as well as x86-64.
 
 ## usage
 
-compile with `ncc/nc++/nfort -g -S`
+compile with `ncc/nc++/nfort -g -S` for NEC compiler or `gcc/gfortran -g -S` (or other x86 compilers) for x86-64.
 
 and view with
 
@@ -39,3 +42,21 @@ and shown in the source view, and the instruction is explained (for VE and x86).
 The marking of lines in both views can be cleared with `c`.
 
 `/` starts a search, `n` and `p` jump to next or previous search hit, marked region or global label.
+
+
+## building
+
+you need a working golang installation in your path.
+
+Standard go setup would be to create `mkdir ~/GO ~/GO/src ~/GO/bin ~/GO/pkg` and set
+
+```
+export GOPATH=~/GO
+export GOBIN=~/GO/bin
+```
+
+run `go get github.com/rthornton128/goncurses` and `go get github.com/jessevdk/go-flags`
+
+`mkdir -p ~/GO/src/github.com/holgerBerger; cd ~/GO/src/github.com/holgerBerger; git clone https://github.com/holgerBerger/veass;`
+
+call `build` in the veass directory to get a build with version numbering.
