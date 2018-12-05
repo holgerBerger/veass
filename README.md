@@ -57,6 +57,9 @@ export GOBIN=~/GO/bin
 
 run `go get github.com/rthornton128/goncurses` and `go get github.com/jessevdk/go-flags`
 
+To create a standard build environment run
+
 `mkdir -p ~/GO/src/github.com/holgerBerger; cd ~/GO/src/github.com/holgerBerger; git clone https://github.com/holgerBerger/veass;`
 
 call `build` in the veass directory to get a build with version numbering.
+
