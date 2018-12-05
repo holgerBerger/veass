@@ -55,13 +55,11 @@ export GOPATH=~/GO
 export GOBIN=~/GO/bin
 ```
 
-run `go get github.com/rthornton128/goncurses` and `go get github.com/jessevdk/go-flags`
+run `go get github.com/rthornton128/goncurses` and `go get github.com/jessevdk/go-flags` 
+for dependencies.
 
-To create a standard build environment run
-
-`mkdir -p ~/GO/src/github.com/holgerBerger; cd ~/GO/src/github.com/holgerBerger; git clone https://github.com/holgerBerger/veass;`
-
-call `build` in the veass directory to get a build with version numbering.
+run `git clone https://github.com/holgerBerger/veass` to download the source, and 
+call `build` in the veass directory to get a build with version numbering in that directory.
 
 You will need the ncurses library on your system as well.
 
