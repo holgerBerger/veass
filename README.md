@@ -63,3 +63,4 @@ To create a standard build environment run
 
 call `build` in the veass directory to get a build with version numbering.
 
+You will need the ncurses library on your system as well.
