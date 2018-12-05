@@ -65,6 +65,8 @@ call `build` in the veass directory to get a build with version numbering.
 
 You will need the ncurses library on your system as well.
 
+For Centos 7, you can use the release https://github.com/holgerBerger/veass/releases/download/rel1/veass
+
 ## what does it look like
 
 ![screenshot](https://github.com/holgerBerger/veass/blob/master/veass_stream.png?raw=true)
