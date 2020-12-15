@@ -48,18 +48,9 @@ The marking of lines in both views can be cleared with `c`.
 
 you need a working golang installation in your path.
 
-Standard go setup would be to create `mkdir ~/GO ~/GO/src ~/GO/bin ~/GO/pkg` and set
-
-```
-export GOPATH=~/GO
-export GOBIN=~/GO/bin
-```
-
-run `go get github.com/rthornton128/goncurses` and `go get github.com/jessevdk/go-flags` 
-for dependencies.
-
 run `git clone https://github.com/holgerBerger/veass` to download the source, and 
 call `build` in the veass directory to get a build with version numbering in that directory.
+(uses now go modules to take care of dependencies.)
 
 You will need the ncurses library on your system as well.
 
